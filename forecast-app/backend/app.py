@@ -52,22 +52,50 @@ def walkthrough(ticker: str, target: float = 0.70):
 
 @app.get("/api/forecast")
 def forecast(ticker: str, target: float = 0.70, eval_start: str = "2025-01-01",
-             eval_end: str = "2026-01-01", interval: str = "1d", y0: int = 2024, y1: int = 2025):
+             eval_end: str = "2026-01-01", interval: str = "1d", y0: int = 2024, y1: int = 2025,
+             engine: str = "fast"):
+    """Interactive forecast. engine='fast' (~1-2s, default, for the dashboard) or 'full'
+    (the 1,980-vector clustering engine, ~60s — only for deep single-stock views)."""
     import os
     default = (target == 0.70 and eval_start == "2025-01-01" and eval_end == "2026-01-01"
                and interval == "1d" and (y0, y1) == (2024, 2025))
     path = os.path.join(os.path.dirname(__file__), "cache", f"forecast_{ticker}.json")
-    if default and os.path.exists(path):
+    if default and engine == "fast" and os.path.exists(path):   # serve precomputed full result
         with open(path) as f:
             return json.load(f)
     d = data.fetch(ticker, interval=interval, y0=y0, y1=y1)
-    res = engine_vectors.run_walkforward(d["rows"], target=target,
-                                         eval_start=eval_start, eval_end=eval_end)
+    fn = engine_vectors.run_walkforward if engine == "full" else engine_vectors.fast_walkforward
+    res = fn(d["rows"], target=target, eval_start=eval_start, eval_end=eval_end)
     res["ticker"] = ticker
-    if default:
-        with open(path, "w") as f:
-            json.dump(res, f)
     return res
+
+
+@app.get("/api/universe")
+def universe():
+    """All tickers we have cached raw data for (instantly forecastable) — the picker universe."""
+    import os
+    cache = os.path.join(os.path.dirname(__file__), "cache")
+    if not os.path.isdir(cache):
+        return {"tickers": [], "n": 0}
+    tk = sorted(f[:-5] for f in os.listdir(cache)
+                if f.endswith(".json") and "_" not in f and f[:-5].isalpha())
+    return {"tickers": tk, "n": len(tk)}
+
+
+@app.get("/api/run_detail")
+def run_detail(name: str = "full_run.json"):
+    """Per-stock results of a saved batch run (e.g. the 1,000-stock run) for browsing."""
+    import os
+    if "/" in name or "\\" in name:
+        return {"error": "bad name"}
+    p = os.path.join(os.path.dirname(__file__), name)
+    if not os.path.exists(p):
+        return {"error": "not found", "rows": []}
+    d = json.load(open(p))
+    rows = [{"ticker": k, **{m: v.get(m) for m in ("coverage", "avg_width_pct", "drift_pct", "n_eval")}}
+            for k, v in d.items() if isinstance(v, dict) and v.get("ok")]
+    rows.sort(key=lambda r: -(r.get("coverage") or 0))
+    return {"name": name, "n": len(rows), "rows": rows}
 
 
 @app.get("/api/repository")

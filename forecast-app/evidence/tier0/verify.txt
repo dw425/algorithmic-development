@@ -1,0 +1,14 @@
+70%
+80%
+90%
+95%
+Apply ▶
+Forecast — 4 stocks · range + accuracy + 90-day series
+
+Multi-stock. Pick stocks/date/granularity/target on the left, hit Apply. A hit = actual landed in the predicted range. Coverage & width read together.
+
+Accuracy across selected stocks
+TICKER	COVERAGE	WIDTH	DRIFT	
+AAPL	70%	4.7
+
+ALL GATES PASS ✅

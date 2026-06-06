@@ -211,29 +211,30 @@ def geo_consensus(vals, reach, drift, last):
 # ============================ FULL-PIPELINE COMPONENTS ============================
 
 def hurst_exponent(prices):
-    """R/S analysis. H~0.5 random walk, >0.5 trending, <0.5 mean-reverting."""
-    r = np.diff(np.log(prices))
+    """Hurst via DFA (Detrended Fluctuation Analysis) on log-returns.
+    H~0.5 random walk (white-noise returns), >0.5 trending/persistent, <0.5 mean-reverting.
+    DFA is far less small-sample-biased than uncorrected R/S (which read ~0.62 on a random
+    walk — caught by the Phase-4 math gate)."""
+    r = np.diff(np.log(np.maximum(prices, 1e-9)))
     N = len(r)
-    if N < 20:
+    if N < 32:
         return 0.5
-    lags = [l for l in (2, 4, 8, 16, 32, 64) if l < N // 2]
-    rs = []
-    for lag in lags:
-        chunks = N // lag
-        vals = []
-        for i in range(chunks):
-            seg = r[i * lag:(i + 1) * lag]
-            if len(seg) < 2:
-                continue
-            z = np.cumsum(seg - seg.mean())
-            R, S = z.max() - z.min(), seg.std()
-            if S > 0:
-                vals.append(R / S)
-        if vals:
-            rs.append((lag, np.mean(vals)))
-    if len(rs) < 2:
+    y = np.cumsum(r - r.mean())                       # integrate the returns
+    scales = [s for s in (8, 16, 32, 64, 128, 256) if s < N // 2]
+    F = []
+    for s in scales:
+        nseg = N // s
+        rms = []
+        t = np.arange(s)
+        for i in range(nseg):
+            seg = y[i * s:(i + 1) * s]
+            coef = np.polyfit(t, seg, 1)              # linear detrend per window
+            rms.append(np.sqrt(np.mean((seg - np.polyval(coef, t)) ** 2)))
+        if rms and np.mean(rms) > 0:
+            F.append((s, float(np.mean(rms))))
+    if len(F) < 2:
         return 0.5
-    H = float(np.polyfit(np.log([a for a, _ in rs]), np.log([b for _, b in rs]), 1)[0])
+    H = float(np.polyfit(np.log([a for a, _ in F]), np.log([b for _, b in F]), 1)[0])
     return max(0.0, min(1.0, H))
 
 
@@ -392,9 +393,25 @@ def fast_walkforward(rows, target=0.70, eval_start="2025-01-01", eval_end="2026-
                     "width_pct": round((hi - lo) / pred * 100, 2)})
         alpha = min(0.6, max(0.005, alpha + 0.05 * (a0 - (0 if hit else 1))))
     cov = hits / len(out) * 100 if out else 0.0
+    # cheap diagnostics (no per-day clustering) so dashboard pages have data fast
+    ei = next((i for i in range(len(dates)) if dates[i] >= eval_start), len(dates))
+    hist = p[:ei] if ei > 40 else p
+    serr = np.array([r["serr"] for r in out]) if out else np.array([])
+    dflags = int(np.sum(np.abs(serr) > 3 * (np.std(serr) + 1e-9))) if len(serr) > 5 else 0
+    try:
+        _, hampel = prep.impute_and_flag(p)
+        stat = prep.stationarity(p)
+    except Exception:  # noqa
+        hampel, stat = 0, {}
     return {"coverage": round(cov, 1),
             "avg_width_pct": round(float(np.mean([r["width_pct"] for r in out])), 2) if out else 0.0,
-            "n_eval": len(out), "target": int(target * 100), "rows": out}
+            "n_eval": len(out), "target": int(target * 100), "rows": out, "engine": "fast",
+            "predictability": predictability(hist) if len(hist) > 30 else None,
+            "lyapunov": round(lyapunov_rosenstein(hist), 4) if len(hist) > 50 else None,
+            "drift_flags": dflags,
+            "calibration": {"nominal": int(target * 100), "empirical": round(cov, 1),
+                            "calibrated": bool(abs(cov / 100 - target) < 0.05)},
+            "data_quality": {"n_quarantined": 0, "hampel_outliers": hampel, "stationarity": stat}}
 
 
 def lyapunov_rosenstein(prices, m=3, tau=1, max_t=8):
