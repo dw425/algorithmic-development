@@ -51,18 +51,45 @@ def walkthrough(ticker: str, target: float = 0.70):
 
 
 @app.get("/api/forecast")
-def forecast(ticker: str, target: float = 0.70):
+def forecast(ticker: str, target: float = 0.70, eval_start: str = "2025-01-01",
+             eval_end: str = "2026-01-01", interval: str = "1d", y0: int = 2024, y1: int = 2025):
     import os
+    default = (target == 0.70 and eval_start == "2025-01-01" and eval_end == "2026-01-01"
+               and interval == "1d" and (y0, y1) == (2024, 2025))
     path = os.path.join(os.path.dirname(__file__), "cache", f"forecast_{ticker}.json")
-    if os.path.exists(path):
+    if default and os.path.exists(path):
         with open(path) as f:
             return json.load(f)
-    d = data.fetch(ticker)
-    res = engine_vectors.run_walkforward(d["rows"], target=target)
+    d = data.fetch(ticker, interval=interval, y0=y0, y1=y1)
+    res = engine_vectors.run_walkforward(d["rows"], target=target,
+                                         eval_start=eval_start, eval_end=eval_end)
     res["ticker"] = ticker
-    with open(path, "w") as f:
-        json.dump(res, f)
+    if default:
+        with open(path, "w") as f:
+            json.dump(res, f)
     return res
+
+
+@app.get("/api/repository")
+def repository():
+    """List saved runs/artifacts in the cache + run files (for the Repository page)."""
+    import os
+    base = os.path.dirname(__file__)
+    cache = os.path.join(base, "cache")
+    forecasts = sorted(f[len("forecast_"):-5] for f in os.listdir(cache)
+                       if f.startswith("forecast_") and f.endswith(".json")) if os.path.isdir(cache) else []
+    runs = []
+    for fn in ("full_run.json", "run_results.json", "sweep_results.json"):
+        p = os.path.join(base, fn)
+        if os.path.exists(p):
+            try:
+                d = json.load(open(p))
+                ok = sum(1 for v in d.values() if isinstance(v, dict) and v.get("ok"))
+                runs.append({"name": fn, "n_series": len(d), "n_valid": ok})
+            except Exception:  # noqa
+                pass
+    artifacts = [f for f in os.listdir(base) if f.endswith(".png")] if os.path.isdir(base) else []
+    return {"cached_forecasts": forecasts, "runs": runs, "artifacts": artifacts}
 
 
 @app.get("/api/tpa")

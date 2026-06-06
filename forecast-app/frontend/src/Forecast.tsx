@@ -1,128 +1,87 @@
 import { useState, useEffect } from "react";
-import { getForecast, getHorizons, type RunResult, type HorizonsResult, TICKERS } from "./api";
+import { getForecast, type RunResult } from "./api";
+import { useGlobal } from "./GlobalControls";
 import Plot from "./Plot";
 
-const HZ = ["7d", "30d", "90d"];
+const COLORS = ["#3b82f6", "#34d399", "#f0b429", "#f87171", "#a78bfa", "#22d3ee", "#fb923c", "#e879f9", "#60a5fa", "#4ade80"];
 
 export default function Forecast() {
-  const [ticker, setTicker] = useState("MSFT");
-  const [target, setTarget] = useState(70);
-  const [fc, setFc] = useState<RunResult | null>(null);
-  const [hz, setHz] = useState<HorizonsResult | null>(null);
-  const [horizon, setHorizon] = useState("30d");
+  const g = useGlobal();
+  const [results, setResults] = useState<Record<string, RunResult>>({});
+  const [focus, setFocus] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  async function load(t = ticker, tg = target) {
+  async function load() {
+    if (!g.stocks.length) return;
     setLoading(true); setErr(null);
     try {
-      const [a, b] = await Promise.all([getForecast(t, tg / 100), getHorizons(t, tg / 100)]);
-      setFc(a); setHz(b);
+      const out: Record<string, RunResult> = {};
+      await Promise.all(g.stocks.map(async (t) => {
+        out[t] = await getForecast(t, g.target / 100, g.start, g.end, g.granularity);
+      }));
+      setResults(out); setFocus(g.stocks[0]);
     } catch (e) { setErr(String(e)); }
     setLoading(false);
   }
-  useEffect(() => { load("MSFT", 70); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [g.runKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const rows = fc?.rows ?? [];
-  const dates = rows.map((r) => r.date);
-  const last = rows[rows.length - 1];
-  const hser = hz?.series?.[horizon] ?? [];
-  const covCls = (c: number) => (c >= target ? "good" : c >= target - 8 ? "mid" : "bad");
+  const tickers = Object.keys(results);
+  const covCls = (c: number) => (c >= g.target ? "good" : c >= g.target - 8 ? "mid" : "bad");
+
+  // normalized (rebased to 100) actual close overlay across all selected stocks
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const overlay: any[] = tickers.map((t, i) => {
+    const rows = results[t].rows;
+    const base = rows[0]?.actual || 1;
+    return { x: rows.map((r) => r.date), y: rows.map((r) => (r.actual / base) * 100),
+      name: t, mode: "lines", line: { color: COLORS[i % COLORS.length], width: 1.6 } };
+  });
+
+  const fr = focus ? results[focus] : null;
 
   return (
     <div>
-      <div className="controls">
-        <label>Stock:&nbsp;
-          <select value={ticker} onChange={(e) => { setTicker(e.target.value); load(e.target.value, target); }}>
-            {TICKERS.map((t) => <option key={t}>{t}</option>)}
-          </select></label>
-        <label>Prediction range (target coverage):&nbsp;
-          <select value={target} onChange={(e) => { const v = Number(e.target.value); setTarget(v); load(ticker, v); }}>
-            {[50, 60, 70, 80, 90, 95].map((t) => <option key={t} value={t}>{t}%</option>)}
-          </select></label>
-        {loading && <span className="kv">computing…</span>}
-      </div>
+      <h1>Forecast — {tickers.length} stock{tickers.length !== 1 ? "s" : ""} · range + accuracy + 90-day series</h1>
+      <p className="sub">Multi-stock. Pick stocks/date/granularity/target on the left, hit <b>Apply</b>.
+        A hit = actual landed in the predicted range. Coverage & width read together.</p>
+      {loading && <div className="kv">computing {g.stocks.length} forecasts…</div>}
       {err && <div className="err">{err}</div>}
 
-      {fc && <>
-        {/* ---- headline accuracy cards ---- */}
-        <div className="cards">
-          <div className="card"><div className="cnum">{fc.coverage}%</div><div className="clab">1-day accuracy (coverage)</div></div>
-          <div className="card"><div className="cnum">{fc.avg_width_pct}%</div><div className="clab">avg range width</div></div>
-          {last && <div className="card"><div className="cnum">${last.lo}–${last.hi}</div><div className="clab">latest predicted range</div></div>}
-          {fc.predictability && <div className="card"><div className="cnum">{fc.predictability.hurst}</div><div className="clab">Hurst ({fc.predictability.label.split("—")[0].trim()})</div></div>}
-          {fc.risk_flags !== undefined && <div className="card"><div className="cnum">{fc.risk_flags}</div><div className="clab">drift / risk flags</div></div>}
-        </div>
-
-        {/* ---- multi-horizon accuracy 7/30/90 ---- */}
-        {hz && <>
-          <h2>Forecast accuracy at 7 / 30 / 90 days out</h2>
-          <div className="cards">
-            {HZ.map((h) => {
-              const m = hz.horizons[h];
-              return <div key={h} className={`card sel ${horizon === h ? "on" : ""}`} onClick={() => setHorizon(h)}>
-                <div className="clab">{h} out</div>
-                <div className={`cnum ${m ? covCls(m.coverage) : ""}`}>{m ? m.coverage + "%" : "–"}</div>
-                <div className="clab">width {m ? m.avg_width_pct + "%" : "–"}</div>
-              </div>;
-            })}
-          </div>
-        </>}
-
-        {/* ---- 1-day forecast chart ---- */}
-        <h2>{fc.ticker} — 1-day forecast range vs actual (90-day backtest)</h2>
-        <Plot height={420} data={[
-          { x: dates, y: rows.map((r) => r.hi), mode: "lines", line: { width: 0 }, showlegend: false, hoverinfo: "skip" },
-          { x: dates, y: rows.map((r) => r.lo), name: `${fc.target}% range`, mode: "lines", line: { width: 0 }, fill: "tonexty", fillcolor: "rgba(59,130,246,0.18)" },
-          { x: dates, y: rows.map((r) => r.pred), name: "forecast", mode: "lines", line: { color: "#3b82f6", width: 2 } },
-          { x: dates, y: rows.map((r) => r.actual), name: "actual", mode: "lines+markers", line: { color: "#34d399", width: 1.5 }, marker: { size: 3 } },
-        ]} layout={{ yaxis: { title: "$ close" } }} />
-
-        {/* ---- selected horizon chart ---- */}
-        {hser.length > 0 && <>
-          <h2>{horizon}-out forecast: predicted range vs eventual actual</h2>
-          <Plot height={380} data={[
-            { x: hser.map((r) => r.target_date), y: hser.map((r) => r.hi), mode: "lines", line: { width: 0 }, showlegend: false, hoverinfo: "skip" },
-            { x: hser.map((r) => r.target_date), y: hser.map((r) => r.lo), name: `${horizon} ${target}% range`, mode: "lines", line: { width: 0 }, fill: "tonexty", fillcolor: "rgba(240,180,41,0.16)" },
-            { x: hser.map((r) => r.target_date), y: hser.map((r) => r.pred), name: "forecast", mode: "lines", line: { color: "#f0b429", width: 2 } },
-            { x: hser.map((r) => r.target_date), y: hser.map((r) => r.actual), name: "actual", mode: "lines+markers", line: { color: "#34d399", width: 1.5 }, marker: { size: 3 } },
-          ]} layout={{ yaxis: { title: "$ close" } }} />
-        </>}
-
-        {/* ---- full data table for the selected horizon ---- */}
-        {hser.length > 0 && <>
-          <h2>{horizon}-out data — made-on date → target date, range vs actual ({hser.length} rows)</h2>
-          <table className="detail">
-            <thead><tr><th>Forecast made</th><th>Target date</th><th>Predicted range</th><th>Point</th><th>Actual</th><th>Result</th></tr></thead>
-            <tbody>
-              {hser.map((r, i) => (
-                <tr key={i} className={r.hit ? "" : "miss"}>
-                  <td>{r.date}</td><td>{r.target_date}</td>
-                  <td>${r.lo.toFixed(2)} – ${r.hi.toFixed(2)}</td>
-                  <td>${r.pred.toFixed(2)}</td><td>${r.actual.toFixed(2)}</td>
-                  <td className={r.hit ? "good" : "bad"}>{r.hit ? "✓ hit" : "✗ miss"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>}
-
-        {/* ---- full 1-day data table ---- */}
-        <h2>1-day data — full 90-day series ({rows.length} rows)</h2>
-        <table className="detail">
-          <thead><tr><th>Date</th><th>Predicted range</th><th>Point</th><th>Actual</th><th>Result</th><th>Width</th></tr></thead>
+      {tickers.length > 0 && <>
+        <h2>Accuracy across selected stocks</h2>
+        <table>
+          <thead><tr><th>Ticker</th><th>Coverage</th><th>Width</th><th>Drift</th><th></th></tr></thead>
           <tbody>
-            {rows.map((r) => (
-              <tr key={r.date} className={r.hit ? "" : "miss"}>
-                <td>{r.date}</td>
-                <td>${r.lo.toFixed(2)} – ${r.hi.toFixed(2)}</td>
-                <td>${r.pred.toFixed(2)}</td><td>${r.actual.toFixed(2)}</td>
-                <td className={r.hit ? "good" : "bad"}>{r.hit ? "✓" : "✗"}</td>
-                <td>{r.width_pct.toFixed(2)}%</td>
+            {tickers.map((t) => (
+              <tr key={t} className={focus === t ? "miss" : ""}>
+                <td className="tk">{t}</td>
+                <td className={covCls(results[t].coverage)}>{results[t].coverage}%</td>
+                <td>{results[t].avg_width_pct}%</td>
+                <td>{results[t].rows.length ? (((results[t].rows.at(-1)!.actual / results[t].rows[0].actual) - 1) * 100).toFixed(1) : "–"}%</td>
+                <td><button className="link" onClick={() => setFocus(t)}>focus →</button></td>
               </tr>
             ))}
           </tbody>
         </table>
+
+        <h2>How the selected stocks performed (actual close, rebased to 100)</h2>
+        <Plot height={380} data={overlay} layout={{ yaxis: { title: "indexed (start=100)" } }} />
+
+        {fr && <>
+          <h2>{focus} — forecast range vs actual</h2>
+          <div className="badges">
+            <span className={covCls(fr.coverage)}>Coverage {fr.coverage}%</span>
+            <span>Width {fr.avg_width_pct}%</span>
+            {fr.predictability && <span>Hurst {fr.predictability.hurst}</span>}
+          </div>
+          <Plot height={380} data={[
+            { x: fr.rows.map((r) => r.date), y: fr.rows.map((r) => r.hi), mode: "lines", line: { width: 0 }, showlegend: false, hoverinfo: "skip" },
+            { x: fr.rows.map((r) => r.date), y: fr.rows.map((r) => r.lo), name: `${fr.target}% range`, mode: "lines", line: { width: 0 }, fill: "tonexty", fillcolor: "rgba(59,130,246,0.18)" },
+            { x: fr.rows.map((r) => r.date), y: fr.rows.map((r) => r.pred), name: "forecast", mode: "lines", line: { color: "#3b82f6", width: 2 } },
+            { x: fr.rows.map((r) => r.date), y: fr.rows.map((r) => r.actual), name: "actual", mode: "lines+markers", line: { color: "#34d399", width: 1.5 }, marker: { size: 3 } },
+          ]} layout={{ yaxis: { title: "$ close" } }} />
+        </>}
       </>}
     </div>
   );

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { getTPA, type TPAResult, TICKERS } from "./api";
+import { getTPA, type TPAResult } from "./api";
+import { useGlobal } from "./GlobalControls";
 import Plot from "./Plot";
 
 const VLABEL: Record<string, string> = {
@@ -12,19 +13,20 @@ const VLABEL: Record<string, string> = {
 };
 
 export default function TPA() {
-  const [ticker, setTicker] = useState("MSFT");
+  const g = useGlobal();
+  const ticker = g.stocks[0] || "MSFT";
   const [m, setM] = useState(100);
   const [r, setR] = useState<TPAResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  async function load(t = ticker, mm = m) {
+  async function load(mm = m) {
     setLoading(true); setErr(null);
-    try { setR(await getTPA(t, mm, 0.001)); }
+    try { setR(await getTPA(ticker, mm, 0.001)); }
     catch (e) { setErr(String(e)); }
     setLoading(false);
   }
-  useEffect(() => { load("MSFT", 100); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(m); }, [g.runKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 3D threads: one semi-transparent line per candidate, winner bold, actual + breaches overlaid
   const v = r?.viz3d;
@@ -60,12 +62,9 @@ export default function TPA() {
         forecasts from each, and threads the winning offset over time into a <b>modifier</b>.
         Ships the modifier <b>only if it lifts accuracy out-of-sample</b> (train→forward).</p>
       <div className="controls">
-        <label>Stock:&nbsp;
-          <select value={ticker} onChange={(e) => { setTicker(e.target.value); load(e.target.value, m); }}>
-            {TICKERS.map((t) => <option key={t}>{t}</option>)}
-          </select></label>
+        <span className="kv"><b>{ticker}</b> (first selected stock)</span>
         <label>Range ±{(m * 0.1).toFixed(0)}% (m={m}):&nbsp;
-          <select value={m} onChange={(e) => { const mm = Number(e.target.value); setM(mm); load(ticker, mm); }}>
+          <select value={m} onChange={(e) => { const mm = Number(e.target.value); setM(mm); load(mm); }}>
             {[50, 100, 200].map((mm) => <option key={mm} value={mm}>{mm}</option>)}
           </select></label>
         {loading && <span className="kv">threading…</span>}

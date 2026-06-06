@@ -60,8 +60,9 @@ export async function runAllVectors(): Promise<{ results: VSummary[]; target: nu
   return r.json();
 }
 
-export async function getForecast(ticker: string, target: number): Promise<RunResult> {
-  const r = await fetch(`${BASE}/api/forecast?ticker=${ticker}&target=${target}`);
+export async function getForecast(ticker: string, target: number, start = "2025-01-01",
+  end = "2026-01-01", interval = "1d"): Promise<RunResult> {
+  const r = await fetch(`${BASE}/api/forecast?ticker=${ticker}&target=${target}&eval_start=${start}&eval_end=${end}&interval=${interval}`);
   if (!r.ok) throw new Error(`forecast failed: ${r.status}`);
   return r.json();
 }
@@ -112,6 +113,17 @@ export interface TPAResult {
 export async function getTPA(ticker: string, m = 100, c = 0.001): Promise<TPAResult> {
   const r = await fetch(`${BASE}/api/tpa?ticker=${ticker}&m=${m}&c=${c}`);
   if (!r.ok) throw new Error(`tpa failed: ${r.status}`);
+  return r.json();
+}
+
+export interface Repo {
+  cached_forecasts: string[];
+  runs: { name: string; n_series: number; n_valid: number }[];
+  artifacts: string[];
+}
+export async function getRepository(): Promise<Repo> {
+  const r = await fetch(`${BASE}/api/repository`);
+  if (!r.ok) throw new Error(`repository failed: ${r.status}`);
   return r.json();
 }
 

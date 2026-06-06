@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { getWalkthrough, type Walkthrough as WT, type Pt, TICKERS } from "./api";
+import { useState, useEffect } from "react";
+import { getWalkthrough, type Walkthrough as WT, type Pt } from "./api";
+import { useGlobal } from "./GlobalControls";
 import Plot from "./Plot";
 
 const COLORS = ["#3b82f6", "#34d399", "#f0b429", "#f87171", "#a78bfa", "#22d3ee", "#fb923c"];
@@ -42,8 +43,8 @@ const SCENE = {
 };
 
 export default function Walkthrough() {
-  const [ticker, setTicker] = useState("MSFT");
-  const [target, setTarget] = useState(70);
+  const g = useGlobal();
+  const ticker = g.stocks[0] || "MSFT";
   const [wt, setWt] = useState<WT | null>(null);
   const [phase, setPhase] = useState(0);
   const [method, setMethod] = useState<"km" | "gm" | "db">("km");
@@ -52,10 +53,11 @@ export default function Walkthrough() {
 
   async function load() {
     setLoading(true); setErr(null);
-    try { setWt(await getWalkthrough(ticker, target / 100)); setPhase(0); }
+    try { setWt(await getWalkthrough(ticker, g.target / 100)); setPhase(0); }
     catch (e) { setErr(String(e)); }
     setLoading(false);
   }
+  useEffect(() => { load(); }, [g.runKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function render() {
     if (!wt) return null;
@@ -210,16 +212,9 @@ export default function Walkthrough() {
 
   return (
     <div>
+      <h1>Step-by-step walkthrough — {ticker}</h1>
       <div className="controls">
-        <label>Stock:&nbsp;
-          <select value={ticker} onChange={(e) => setTicker(e.target.value)}>
-            {TICKERS.map((t) => <option key={t}>{t}</option>)}
-          </select></label>
-        <label>Target:&nbsp;
-          <select value={target} onChange={(e) => setTarget(Number(e.target.value))}>
-            {[50, 60, 70, 80, 90].map((t) => <option key={t} value={t}>{t}%</option>)}
-          </select></label>
-        <button onClick={load} disabled={loading}>{loading ? "Computing 1,800 vectors…" : "Load walkthrough"}</button>
+        <span className="kv">{loading ? "Computing 1,800 vectors…" : "first selected stock · change on the left, then Apply"}</span>
       </div>
       {err && <div className="err">{err}</div>}
 

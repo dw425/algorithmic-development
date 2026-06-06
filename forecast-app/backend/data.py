@@ -45,18 +45,21 @@ def _epoch(y, m, d):
     return int(datetime.datetime(y, m, d, tzinfo=datetime.timezone.utc).timestamp())
 
 
-def fetch(ticker, force=False):
-    """Return {'ticker', 'rows':[{'date','close'}]} for 2024-2025 daily close."""
-    path = os.path.join(CACHE, f"{ticker}.json")
+def fetch(ticker, force=False, interval="1d", y0=2024, y1=2025):
+    """Return {'ticker','rows':[{date,close}]}. Granularity via interval (1d/1wk/1mo);
+    year range via y0..y1. Default (1d,2024-2025) keeps the original cache file."""
+    suffix = "" if (interval == "1d" and (y0, y1) == (2024, 2025)) else f"_{interval}_{y0}_{y1}"
+    path = os.path.join(CACHE, f"{ticker}{suffix}.json")
     if os.path.exists(path) and not force:
         with open(path) as f:
             return json.load(f)
 
-    p1, p2 = _epoch(2023, 12, 1), _epoch(2026, 1, 15)
+    p1, p2 = _epoch(y0 - 1, 12, 1), _epoch(y1 + 1, 1, 15)
+    years = set(range(y0, y1 + 1))
     last_err = None
     for host in ("query1", "query2"):
         url = (f"https://{host}.finance.yahoo.com/v8/finance/chart/{ticker}"
-               f"?period1={p1}&period2={p2}&interval=1d")
+               f"?period1={p1}&period2={p2}&interval={interval}")
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
             try:
@@ -74,7 +77,7 @@ def fetch(ticker, force=False):
                 if c is None:
                     continue
                 d = datetime.datetime.fromtimestamp(t, datetime.timezone.utc).date()
-                if d.year in (2024, 2025):
+                if d.year in years:
                     rows.append({"date": d.isoformat(), "close": float(c)})
             rows.sort(key=lambda x: x["date"])
             out = {"ticker": ticker, "rows": rows}

@@ -1,26 +1,24 @@
 import { useState, useEffect } from "react";
-import { getConstellation, type Constellation as C, TICKERS } from "./api";
+import { getConstellation, type Constellation as C } from "./api";
+import { useGlobal } from "./GlobalControls";
 import Plot from "./Plot";
 
 const PALETTE = ["#3b82f6", "#34d399", "#f0b429", "#f87171", "#a78bfa", "#22d3ee", "#fb923c", "#e879f9"];
 
 export default function Constellation() {
-  const [picked, setPicked] = useState<string[]>(TICKERS.slice());
+  const g = useGlobal();
   const [data, setData] = useState<C | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   async function load() {
+    if (g.stocks.length < 2) { setData(null); return; }
     setLoading(true); setErr(null);
-    try { setData(await getConstellation(picked)); }
+    try { setData(await getConstellation(g.stocks, g.start, g.end)); }
     catch (e) { setErr(String(e)); }
     setLoading(false);
   }
-  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  function toggle(t: string) {
-    setPicked((p) => p.includes(t) ? p.filter((x) => x !== t) : (p.length < 10 ? [...p, t] : p));
-  }
+  useEffect(() => { load(); }, [g.runKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // community centroids for dependency edges
   const centroids: Record<number, { x: number; y: number }> = {};
@@ -57,16 +55,11 @@ export default function Constellation() {
       <p className="sub">Data-gravity constellation: each stock is a node placed by
         force-directed layout over return-correlation; <b>Louvain community detection</b>
         colors the clusters; gold lines are <b>cluster-to-cluster dependency</b>. Node size = |drift|.</p>
-      <div className="controls" style={{ flexWrap: "wrap" }}>
-        {TICKERS.map((t) => (
-          <label key={t} className={`chip ${picked.includes(t) ? "on" : ""}`} style={{ cursor: "pointer" }}>
-            <input type="checkbox" checked={picked.includes(t)} onChange={() => toggle(t)}
-              style={{ marginRight: 4 }} />{t}
-          </label>
-        ))}
-        <button onClick={load} disabled={loading || picked.length < 2}>
-          {loading ? "Mapping…" : `Map ${picked.length} stocks`}</button>
+      <div className="controls">
+        <span className="kv">{g.stocks.length} stocks selected (pick on the left, then Apply)</span>
+        {loading && <span className="kv">mapping…</span>}
       </div>
+      {g.stocks.length < 2 && <div className="kv">Select at least 2 stocks on the left.</div>}
       {err && <div className="err">{err}</div>}
 
       {data && <>

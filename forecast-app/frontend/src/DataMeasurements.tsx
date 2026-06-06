@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { getForecast, type RunResult, TICKERS } from "./api";
+import { getForecast, type RunResult } from "./api";
+import { useGlobal } from "./GlobalControls";
 
 function Metric({ label, value, hint, cls }: { label: string; value: React.ReactNode; hint?: string; cls?: string }) {
   return (
@@ -12,33 +13,29 @@ function Metric({ label, value, hint, cls }: { label: string; value: React.React
 }
 
 export default function DataMeasurements() {
-  const [ticker, setTicker] = useState("MSFT");
+  const g = useGlobal();
+  const ticker = g.stocks[0] || "MSFT";
   const [r, setR] = useState<RunResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  async function load(t = ticker) {
+  async function load() {
     setLoading(true); setErr(null);
-    try { setR(await getForecast(t, 0.70)); }
+    try { setR(await getForecast(ticker, g.target / 100, g.start, g.end, g.granularity)); }
     catch (e) { setErr(String(e)); }
     setLoading(false);
   }
-  useEffect(() => { load("MSFT"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [g.runKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const dq = r?.data_quality;
   const st = dq?.stationarity;
 
   return (
     <div>
-      <p className="sub">Every diagnostic the engine computes for a series — data quality,
-        stationarity, predictability ceilings, model diversity, calibration, and the bias/drift audits.</p>
-      <div className="controls">
-        <label>Stock:&nbsp;
-          <select value={ticker} onChange={(e) => { setTicker(e.target.value); load(e.target.value); }}>
-            {TICKERS.map((t) => <option key={t}>{t}</option>)}
-          </select></label>
-        {loading && <span className="kv">computing…</span>}
-      </div>
+      <h1>Data measurements — {ticker}</h1>
+      <p className="sub">Every diagnostic the engine computes (first selected stock) — data quality,
+        stationarity, predictability ceilings, model diversity, calibration, bias/drift audits.</p>
+      {loading && <div className="kv">computing…</div>}
       {err && <div className="err">{err}</div>}
 
       {r && <>
