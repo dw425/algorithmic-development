@@ -26,6 +26,19 @@ export interface RunResult {
   risk_flags?: number;
   predictability?: Predictability | null;
   multi_horizon?: Record<string, Horizon>;
+  // measurements (from the full engine)
+  drift_flags?: number;
+  avg_psi?: number;
+  exogenous?: string;
+  lyapunov?: number | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data_quality?: any;
+  confidence_audit?: { narrow_hitrate: number; wide_hitrate: number };
+  triangulation?: { our_drift_pct: number; market_drift_pct: number; divergence_flag: boolean };
+  calibration?: { nominal: number; empirical: number; calibrated: boolean };
+  rho?: { mean_rho: number; effective_models: number; pool: number };
+  thief_reconciled?: number;
+  signal_decomp_next?: number;
   rows: Row[];
 }
 
