@@ -8,6 +8,7 @@ import data
 import engine
 import engine_vectors
 import gravity
+import tpa
 
 app = FastAPI(title="Range Forecast Engine")
 app.add_middleware(
@@ -61,6 +62,14 @@ def forecast(ticker: str, target: float = 0.70):
     res["ticker"] = ticker
     with open(path, "w") as f:
         json.dump(res, f)
+    return res
+
+
+@app.get("/api/tpa")
+def tpa_endpoint(ticker: str, m: int = 100, c: float = 0.001,
+                 eval_start: str = "2025-01-01", eval_end: str = "2026-01-01"):
+    res = tpa.tpa_for_ticker(ticker, m=m, c=c, eval_start=eval_start, eval_end=eval_end)
+    res["ticker"] = ticker
     return res
 
 

@@ -4,10 +4,11 @@ import Walkthrough from "./Walkthrough";
 import Forecast from "./Forecast";
 import Constellation from "./Constellation";
 import DataMeasurements from "./DataMeasurements";
+import TPA from "./TPA";
 import "./App.css";
 
 export default function App() {
-  const [view, setView] = useState<"forecast" | "measurements" | "constellation" | "summary" | "full" | "walk">("forecast");
+  const [view, setView] = useState<"forecast" | "measurements" | "tpa" | "constellation" | "summary" | "full" | "walk">("forecast");
   const [target, setTarget] = useState(70);
   const [summaries, setSummaries] = useState<Summary[]>([]);
   const [detail, setDetail] = useState<RunResult | null>(null);
@@ -59,6 +60,8 @@ export default function App() {
           Full engine — all 10</button>
         <button className={view === "measurements" ? "on" : ""} onClick={() => setView("measurements")}>
           📊 Data measurements</button>
+        <button className={view === "tpa" ? "on" : ""} onClick={() => setView("tpa")}>
+          🧵 Threaded Point Analysis</button>
         <button className={view === "constellation" ? "on" : ""} onClick={() => setView("constellation")}>
           🌌 Constellation & dependency</button>
         <button className={view === "walk" ? "on" : ""} onClick={() => setView("walk")}>
@@ -70,6 +73,8 @@ export default function App() {
       {view === "forecast" && <Forecast />}
 
       {view === "measurements" && <DataMeasurements />}
+
+      {view === "tpa" && <TPA />}
 
       {view === "constellation" && <Constellation />}
 

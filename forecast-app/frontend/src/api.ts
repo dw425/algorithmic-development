@@ -96,6 +96,25 @@ export async function getConstellation(tickers: string[], start = "2025-01-01", 
   return r.json();
 }
 
+export interface TPAResult {
+  ticker: string; m: number; c: number; points: number; range_pct: number;
+  n_steps: number; train_steps: number; forward_steps: number;
+  modifier_pct: number; significant: boolean; accuracy_lift_pct: number;
+  vectors: Record<string, number>;
+  viz3d: {
+    dates: string[];
+    threads: { k_pct: number; z: number[] }[];
+    winner_pct: number[]; actual: number[]; breach_idx: number[];
+  };
+  error?: string;
+}
+
+export async function getTPA(ticker: string, m = 100, c = 0.001): Promise<TPAResult> {
+  const r = await fetch(`${BASE}/api/tpa?ticker=${ticker}&m=${m}&c=${c}`);
+  if (!r.ok) throw new Error(`tpa failed: ${r.status}`);
+  return r.json();
+}
+
 export interface Summary {
   ticker: string;
   coverage: number;
