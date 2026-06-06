@@ -2,10 +2,11 @@ import { useState } from "react";
 import { runAll, runOne, runAllVectors, type RunResult, type Summary, type VSummary } from "./api";
 import Walkthrough from "./Walkthrough";
 import Forecast from "./Forecast";
+import Constellation from "./Constellation";
 import "./App.css";
 
 export default function App() {
-  const [view, setView] = useState<"forecast" | "summary" | "full" | "walk">("forecast");
+  const [view, setView] = useState<"forecast" | "constellation" | "summary" | "full" | "walk">("forecast");
   const [target, setTarget] = useState(70);
   const [summaries, setSummaries] = useState<Summary[]>([]);
   const [detail, setDetail] = useState<RunResult | null>(null);
@@ -55,6 +56,8 @@ export default function App() {
           📈 Forecast (range · accuracy · 90-day series)</button>
         <button className={view === "full" ? "on" : ""} onClick={() => setView("full")}>
           Full engine — all 10</button>
+        <button className={view === "constellation" ? "on" : ""} onClick={() => setView("constellation")}>
+          🌌 Constellation & dependency</button>
         <button className={view === "walk" ? "on" : ""} onClick={() => setView("walk")}>
           Step-by-step walkthrough</button>
         <button className={view === "summary" ? "on" : ""} onClick={() => setView("summary")}>
@@ -62,6 +65,8 @@ export default function App() {
       </div>
 
       {view === "forecast" && <Forecast />}
+
+      {view === "constellation" && <Constellation />}
 
       {view === "walk" && <Walkthrough />}
 

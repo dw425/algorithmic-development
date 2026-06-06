@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import data
 import engine
 import engine_vectors
+import gravity
 
 app = FastAPI(title="Range Forecast Engine")
 app.add_middleware(
@@ -61,6 +62,12 @@ def forecast(ticker: str, target: float = 0.70):
     with open(path, "w") as f:
         json.dump(res, f)
     return res
+
+
+@app.get("/api/constellation")
+def constellation(tickers: str, eval_start: str = "2025-01-01", eval_end: str = "2026-01-01"):
+    tk = [t.strip().upper() for t in tickers.split(",") if t.strip()][:50]
+    return gravity.constellation(tk, eval_start, eval_end)
 
 
 @app.get("/api/horizons")

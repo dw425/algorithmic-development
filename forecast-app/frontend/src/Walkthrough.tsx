@@ -16,8 +16,9 @@ const PHASES = [
   ["mahalanobis", "9 · Mahalanobis", "Covariance-aware concentration of the cloud around its center."],
   ["constellation", "10 · Constellation", "Cluster centroids + MST path length + Davies–Bouldin separation."],
   ["net_results", "11 · Net results", "Mode vs robust-mean vs consensus — do the three converge?"],
-  ["range", "12 · Range (conformal)", "Calibrate band width on recent residuals to the target coverage."],
-  ["result", "13 · Result", "Predicted range vs the actual close — hit or miss."],
+  ["funnel", "12 · Funnel", "Vector drop-off through the refinement stages — where predictions get dropped."],
+  ["range", "13 · Range (conformal)", "Calibrate band width on recent residuals to the target coverage."],
+  ["result", "14 · Result", "Predicted range vs the actual close — hit or miss."],
 ] as const;
 
 function clusterTraces(pts: Pt[], key: "km" | "gm" | "db") {
@@ -108,6 +109,19 @@ export default function Walkthrough() {
             ? "⚠ coherent lean — possible shared bias (the outward eye should check this against reality)"
             : "scattered dissent — looks like noise, not bias"}</span>
       </div>;
+    }
+    if (key === "funnel") {
+      const f = ph.funnel;
+      return <>
+        <div className="kv">From {f[0].count} generated vectors down to the final point — the
+          refinement drop-off.</div>
+        <Plot height={420} data={[{
+          type: "funnel", y: f.map((s: { stage: string }) => s.stage),
+          x: f.map((s: { count: number }) => s.count),
+          textinfo: "value+percent initial",
+          marker: { color: ["#3b82f6", "#22d3ee", "#34d399", "#f0b429", "#f87171"] },
+        }]} layout={{ margin: { l: 220, r: 16, t: 10, b: 20 } }} />
+      </>;
     }
     if (key === "net_results") {
       const nr = ph.net_results;

@@ -32,13 +32,21 @@ inflating it). Mean 1-day coverage ≈ 70% across stocks.
 
 ---
 
-## 1. Repo + infra (Phase 1 — needs shell)
+## 1. Repo + infra (Phase 1 — ✅ DONE 2026-06-06)
 
-- [ ] `gh auth status` + confirm GitHub account (memory: danwarren2017@gmail.com).
-- [ ] Find & clone the user's **`etl-dep-visualizer`** repo (study constellation/cluster viz to replicate).
-- [ ] Create **public** repo `algorithmic-development`.
-- [ ] Make a local folder, clone the new repo into it, move `forecast-app` in, commit + push.
-- [ ] All future work happens in that cloned repo.
+- [x] gh account confirmed: **dw425**.
+- [x] Found & cloned viz repo: **`dw425/etl-dep-viz`** (rich; `project-rose` is a sibling).
+- [x] Created **public** repo **https://github.com/dw425/algorithmic-development**.
+- [x] Local clone: `~/Documents/Github Project/algorithmic-development`; `forecast-app/` copied in;
+      docs in; initial commit pushed (49 files).
+
+### Viz integration spec (etl-dep-viz = D3 v7 + HTML5 Canvas)
+- `ConstellationCanvas.tsx` (1456 ln) — force-directed scatter + convex-hull clusters + KDE heat
+  overlay + edge bundling + LOD + D3 quadtree hit-testing. `GalaxyMapCanvas.tsx` orbital view.
+- `VectorControlPanel.tsx`, `AIChat.tsx` (415 ln — reuse for agentic Scenario Planner).
+- Adapt: each STOCK → constellation point; position by PCA/UMAP of returns or (accuracy,drift);
+  cluster by correlation; animate over time; reuse hull/KDE/LOD render.
+- ⚠️ Integrate ONLY the viz layer into the PUBLIC repo — do NOT republish etl-dep-viz private ETL logic.
 
 ## 2. Automated stock pipeline (backend)
 

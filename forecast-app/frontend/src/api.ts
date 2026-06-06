@@ -69,6 +69,20 @@ export async function getHorizons(ticker: string, target: number): Promise<Horiz
   return r.json();
 }
 
+export interface CNode { id: string; x: number; y: number; community: number; drift_pct: number; vol_pct: number; }
+export interface CEdge { source: number; target: number; weight: number; }
+export interface Community { id: number; members: string[]; size: number; avg_drift_pct: number; }
+export interface Constellation {
+  nodes: CNode[]; edges: CEdge[]; communities: Community[];
+  n: number; n_communities: number; algo: string; days: number;
+}
+
+export async function getConstellation(tickers: string[], start = "2025-01-01", end = "2026-01-01"): Promise<Constellation> {
+  const r = await fetch(`${BASE}/api/constellation?tickers=${tickers.join(",")}&eval_start=${start}&eval_end=${end}`);
+  if (!r.ok) throw new Error(`constellation failed: ${r.status}`);
+  return r.json();
+}
+
 export interface Summary {
   ticker: string;
   coverage: number;
