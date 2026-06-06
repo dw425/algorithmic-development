@@ -1,5 +1,10 @@
 # PROGRESS LEDGER — every algorithm step, tracked to completion
 
+> ⚠️ **RESET 2026-06-06.** The previously-built app was deleted at the user's instruction
+> ("complete garbage — build from the plan"). **All ✅ below are VOID** — that code no longer
+> exists. Rebuild begins fresh from `MASTER_BUILD_PLAN.md` Phase 1. Raw market data archived to
+> `~/Desktop/_market_data_archive`. Statuses are reset to ☐ as the clean rebuild proceeds.
+
 **Completeness contract:** the build is COMPLETE only when every algorithm step below is ✅ with
 committed evidence (math gate numbers + screenshot + goal-met verdict). If any line is not ✅ at
 the end, the build FAILED. Reported every 10 phases.
