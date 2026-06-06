@@ -6,6 +6,9 @@ import DataMeasurements from "./DataMeasurements";
 import TPA from "./TPA";
 import Funnel from "./Funnel";
 import Constellation from "./Constellation";
+import DependencyMapper from "./DependencyMapper";
+import ResultsOverlays from "./ResultsOverlays";
+import Telemetry from "./Telemetry";
 import Walkthrough from "./Walkthrough";
 import Scenario from "./Scenario";
 import Repository from "./Repository";
@@ -14,10 +17,10 @@ import "./App.css";
 type Tab = { id: string; label: string };
 const GROUPS: { group: string; tabs: Tab[] }[] = [
   { group: "Pipeline", tabs: [{ id: "repository", label: "Repository" }] },
-  { group: "Forecast", tabs: [{ id: "forecast", label: "Forecast" }, { id: "measurements", label: "Measurements" }] },
+  { group: "Forecast", tabs: [{ id: "forecast", label: "Forecast" }, { id: "results", label: "Results overlays" }, { id: "measurements", label: "Measurements" }] },
   { group: "Vectors", tabs: [{ id: "tpa", label: "Threaded (TPA)" }, { id: "funnel", label: "Funnel" }] },
-  { group: "Spatial", tabs: [{ id: "constellation", label: "Constellation & dependency" }] },
-  { group: "Experiments", tabs: [{ id: "walk", label: "Walkthrough" }, { id: "scenario", label: "Scenario planner" }] },
+  { group: "Spatial", tabs: [{ id: "constellation", label: "Constellation" }, { id: "dependency", label: "Dependency mapper" }] },
+  { group: "Experiments", tabs: [{ id: "walk", label: "Walkthrough" }, { id: "telemetry", label: "Telemetry" }, { id: "scenario", label: "Scenario planner" }] },
 ];
 
 export default function App() {
@@ -45,11 +48,14 @@ export default function App() {
           <ControlPanel />
           <main className="main">
             {view === "forecast" && <Forecast />}
+            {view === "results" && <ResultsOverlays />}
             {view === "measurements" && <DataMeasurements />}
             {view === "tpa" && <TPA />}
             {view === "funnel" && <Funnel />}
             {view === "constellation" && <Constellation />}
+            {view === "dependency" && <DependencyMapper />}
             {view === "walk" && <Walkthrough />}
+            {view === "telemetry" && <Telemetry />}
             {view === "scenario" && <Scenario />}
             {view === "repository" && <Repository />}
           </main>

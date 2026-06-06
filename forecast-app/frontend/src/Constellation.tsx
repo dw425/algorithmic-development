@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { getConstellation, type Constellation as C } from "./api";
 import { useGlobal } from "./GlobalControls";
-import Plot from "./Plot";
+import ConstellationCanvas from "./ConstellationCanvas";
 
 const PALETTE = ["#3b82f6", "#34d399", "#f0b429", "#f87171", "#a78bfa", "#22d3ee", "#fb923c", "#e879f9"];
 
@@ -20,41 +20,12 @@ export default function Constellation() {
   }
   useEffect(() => { load(); }, [g.runKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // community centroids for dependency edges
-  const centroids: Record<number, { x: number; y: number }> = {};
-  if (data) {
-    data.communities.forEach((c) => {
-      const ms = data.nodes.filter((n) => n.community === c.id);
-      centroids[c.id] = { x: ms.reduce((s, n) => s + n.x, 0) / (ms.length || 1),
-                          y: ms.reduce((s, n) => s + n.y, 0) / (ms.length || 1) };
-    });
-  }
-
-  const nodeTraces = data ? data.communities.map((c) => {
-    const ms = data.nodes.filter((n) => n.community === c.id);
-    return {
-      type: "scatter", mode: "markers+text",
-      name: `cluster ${c.id} (${c.size})`,
-      x: ms.map((n) => n.x), y: ms.map((n) => n.y), text: ms.map((n) => n.id),
-      textposition: "top center", textfont: { size: 9, color: "#c8cee0" },
-      marker: { size: ms.map((n) => 12 + Math.min(Math.abs(n.drift_pct), 60) * 0.4),
-                color: PALETTE[c.id % PALETTE.length], opacity: 0.85,
-                line: { color: "#0f1117", width: 1 } },
-    };
-  }) : [];
-  const edgeTraces = data ? data.edges.map((e) => ({
-    type: "scatter", mode: "lines", showlegend: false, hoverinfo: "text",
-    text: `cluster ${e.source}↔${e.target}: dependency ${e.weight}`,
-    x: [centroids[e.source]?.x, centroids[e.target]?.x],
-    y: [centroids[e.source]?.y, centroids[e.target]?.y],
-    line: { color: "#f0b429", width: Math.max(1, Math.min(e.weight * 1.5, 8)) },
-  })) : [];
-
   return (
     <div>
-      <p className="sub">Data-gravity constellation: each stock is a node placed by
-        force-directed layout over return-correlation; <b>Louvain community detection</b>
-        colors the clusters; gold lines are <b>cluster-to-cluster dependency</b>. Node size = |drift|.</p>
+      <h1>Spatial constellation — {data?.n ?? g.stocks.length} stocks</h1>
+      <p className="sub">Data-gravity constellation (D3 canvas): each stock is a star placed by
+        force-directed layout over return-correlation; <b>Louvain community detection</b> colors
+        the clusters (convex-hull boundaries + density glow). Node size = |drift|.</p>
       <div className="controls">
         <span className="kv">{g.stocks.length} stocks selected (pick on the left, then Apply)</span>
         {loading && <span className="kv">mapping…</span>}
@@ -69,8 +40,7 @@ export default function Constellation() {
           <span>{data.days} days</span>
           <span>{data.edges.length} cluster dependencies</span>
         </div>
-        <Plot height={520} data={[...edgeTraces, ...nodeTraces]}
-          layout={{ xaxis: { visible: false }, yaxis: { visible: false } }} />
+        <ConstellationCanvas nodes={data.nodes} />
 
         <h2>Communities (data-gravity clusters)</h2>
         <table className="mini">
