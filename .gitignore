@@ -1,0 +1,14 @@
+# Python
+**/.venv/
+**/__pycache__/
+*.pyc
+# Node
+**/node_modules/
+**/dist/
+# Data caches (regenerable) + large run artifacts
+**/cache/
+forecast-app/backend/sweep_records.json
+# Playwright
+**/playwright/
+# OS
+.DS_Store

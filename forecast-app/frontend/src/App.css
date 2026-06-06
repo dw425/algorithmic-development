@@ -1,0 +1,80 @@
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #0f1117; color: #e8eaf0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+
+.wrap { max-width: 1000px; margin: 0 auto; padding: 32px 24px 80px; }
+h1 { font-size: 28px; margin: 0 0 4px; }
+h2 { font-size: 18px; margin: 36px 0 12px; color: #b9c0d4; }
+.sub { color: #8b93a7; line-height: 1.5; max-width: 760px; }
+.sub i { color: #f0b429; }
+
+.controls { display: flex; gap: 16px; align-items: center; margin: 20px 0; }
+select { background: #1a1d27; color: #e8eaf0; border: 1px solid #2c3142;
+  padding: 6px 10px; border-radius: 6px; }
+button { background: #3b82f6; color: #fff; border: 0; padding: 9px 16px;
+  border-radius: 7px; font-weight: 600; cursor: pointer; }
+button:disabled { opacity: .5; cursor: default; }
+button.link { background: none; color: #6ea8fe; padding: 0; font-weight: 500; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px;
+  background: #151823; border-radius: 8px; overflow: hidden; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #20242f; }
+th { background: #1c2030; color: #9aa3ba; font-weight: 600; font-size: 12px;
+  text-transform: uppercase; letter-spacing: .03em; }
+.tk { font-weight: 700; }
+tr.miss { background: #1e1518; }
+
+.good { color: #34d399; font-weight: 700; }
+.mid  { color: #f0b429; font-weight: 700; }
+.bad  { color: #f87171; font-weight: 700; }
+
+.badges { display: flex; gap: 10px; margin: 8px 0 4px; }
+.badges span { background: #1a1d27; padding: 5px 12px; border-radius: 999px;
+  font-size: 13px; border: 1px solid #2c3142; }
+.weights { margin: 10px 0 18px; color: #8b93a7; font-size: 13px; }
+.chip { display: inline-block; background: #1a1d27; border: 1px solid #2c3142;
+  padding: 2px 9px; border-radius: 999px; margin: 0 4px 4px 0; color: #c8cee0; }
+.detail td:nth-child(2) { font-variant-numeric: tabular-nums; }
+.err { background: #3a1518; color: #f87171; padding: 12px 16px; border-radius: 8px;
+  margin: 16px 0; border: 1px solid #5a2228; }
+
+.tabs { display: flex; gap: 8px; margin: 18px 0 8px; border-bottom: 1px solid #20242f; }
+.tabs button { background: none; color: #8b93a7; border: 0; border-bottom: 2px solid transparent;
+  border-radius: 0; padding: 10px 14px; font-weight: 600; }
+.tabs button.on { color: #fff; border-bottom-color: #3b82f6; }
+
+.wt-head { color: #b9c0d4; font-size: 14px; margin: 14px 0 10px; font-weight: 600; }
+.stepper { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.step { background: #1a1d27; color: #9aa3ba; border: 1px solid #2c3142; padding: 6px 10px;
+  border-radius: 6px; font-size: 12px; font-weight: 600; }
+.step.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+
+.panel { background: #151823; border: 1px solid #20242f; border-radius: 10px; padding: 18px; }
+.panel h3 { margin: 0 0 4px; font-size: 17px; }
+.pdesc { color: #8b93a7; margin: 0 0 14px; font-size: 13px; }
+.kv { color: #c8cee0; font-size: 13px; margin-bottom: 10px; }
+.kv.big { font-size: 15px; line-height: 1.8; }
+.navbtns { display: flex; justify-content: space-between; margin-top: 14px; }
+.navbtns button { background: #1a1d27; border: 1px solid #2c3142; color: #c8cee0; }
+
+.seg { display: inline-flex; gap: 0; margin-bottom: 10px; border: 1px solid #2c3142;
+  border-radius: 7px; overflow: hidden; }
+.seg button { background: #1a1d27; color: #9aa3ba; border: 0; border-radius: 0;
+  padding: 6px 12px; font-size: 12px; }
+.seg button.on { background: #3b82f6; color: #fff; }
+
+table.mini { width: auto; }
+.result { text-align: center; padding: 20px; font-size: 16px; line-height: 2; border-radius: 10px; }
+.result.good { background: #11261d; border: 1px solid #1f5c43; }
+.result.bad { background: #2a1518; border: 1px solid #5a2228; }
+.result .verdict { font-size: 20px; font-weight: 800; margin-top: 8px; }
+
+.cards { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0; }
+.card { background: #151823; border: 1px solid #20242f; border-radius: 10px;
+  padding: 12px 16px; min-width: 120px; }
+.card.sel { cursor: pointer; }
+.card.sel.on { border-color: #3b82f6; background: #16213a; }
+.card .cnum { font-size: 22px; font-weight: 800; color: #e8eaf0; }
+.card .clab { font-size: 11px; color: #8b93a7; margin-top: 2px; text-transform: uppercase; letter-spacing: .03em; }
+.detail { max-height: 520px; }
