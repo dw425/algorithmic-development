@@ -14,21 +14,21 @@ Sub-phases per component: **E**=engine+math · **D**=data page · **V**=viz page
 
 ---
 
-## TIER 0 — Foundation & harnesses (P1–12)
+## TIER 0 — Foundation & harnesses (P1–12)  *(REBUILD — fresh from scratch)*
 | P | Step | Status | Evidence |
 |---|---|---|---|
-| 1 | Repo scaffold + boots | ✅ | servers up; `verify.sh` green |
-| 2 | pytest harness (real data) | ✅ | evidence/tier0/pytest.txt — 7 passed |
-| 3 | Render/screenshot harness | ✅ | rendertest.mjs → screenshot, 0 console errors |
-| 4 | Validation harness (math utils) | ✅ | validation.py + tests; **caught Hurst R/S bug (0.62 on RW)** |
-| 5 | Data fetch + cache (any ticker/interval/range) | ✅ | test_fetch_real_daily + intervals pass |
-| 6 | Universe endpoint | ✅ | /api/universe 1,121 tickers; test_universe_cache |
-| 7 | App shell (tabs + left panel + router) | ✅ | render_all.png |
-| 8 | Global controls context | ✅ | renders; Apply re-fetches |
-| 9 | Theme + stats bar | 🔨 | theme ✅; dedicated stats bar pending |
-| 10 | Page archetype template (Control/Viz/Data/Adjustment) | ☐ | pending — lands with C1 rebuild |
-| 11 | FE↔BE contract test | ✅ | render hits all endpoints; CORS ok |
-| 12 | `make verify` all-gates runner | ✅ | evidence/tier0/verify.txt — ALL GATES PASS |
+| 1 | Repo scaffold + boots | ✅ | fresh FastAPI `/health` + Vite react-ts; `verify.sh` ALL GATES PASS |
+| 2 | pytest harness (real data) | ☐ | |
+| 3 | Render/screenshot harness | ☐ | |
+| 4 | Validation harness (math utils) | ☐ | |
+| 5 | Data fetch + cache (any ticker/interval/range) | ☐ | (raw data archived; loader to be rebuilt+gated) |
+| 6 | Universe endpoint | ☐ | |
+| 7 | App shell (tabs + left panel + router) | ☐ | |
+| 8 | Global controls context | ☐ | |
+| 9 | Theme + stats bar | ☐ | |
+| 10 | Page archetype template (Control/Viz/Data/Adjustment) | ☐ | |
+| 11 | FE↔BE contract test | ☐ | |
+| 12 | `make verify` all-gates runner | 🔨 | verify.sh exists + green for P1; grows each phase |
 
 ## TIERS 1–6 — Algorithm components (P13–122)
 | # | Algorithm step (component) | P | E | D | V | C | A | Evidence |
