@@ -1,122 +1,64 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState } from "react";
+import { GlobalProvider, useGlobal } from "./GlobalControls";
+import ControlPanel from "./ControlPanel";
+import PageArchetype from "./PageArchetype";
+import "./App.css";
 
-function App() {
-  const [count, setCount] = useState(0)
-
+function StatsBar() {
+  const g = useGlobal();
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+    <div className="statsbar">
+      <span>{g.stocks.length} stocks: {g.stocks.join(", ") || "none"}</span>
+      <span>{g.start} → {g.end}</span>
+      <span>{g.granularity} · {g.horizon}-step · target {g.target}%</span>
+      <span>run #{g.runKey}</span>
+    </div>
+  );
 }
 
-export default App
+// Top-tab structure. Component tabs fill in as each algorithm phase lands (Tier 1+).
+const GROUPS: { group: string; tabs: { id: string; label: string }[] }[] = [
+  { group: "Pipeline", tabs: [{ id: "overview", label: "Overview" }] },
+  { group: "Forecast", tabs: [] },
+  { group: "Vectors", tabs: [] },
+  { group: "Spatial", tabs: [] },
+  { group: "Experiments", tabs: [] },
+];
+
+export default function App() {
+  const [view, setView] = useState("overview");
+  return (
+    <GlobalProvider>
+      <div className="shell">
+        <header className="topbar">
+          <div className="brand">⬡ Algorithmic Forecasting</div>
+          <nav className="tabstrip">
+            {GROUPS.map((grp) => (
+              <div className="tabgroup" key={grp.group}>
+                <span className="tabgroup-h">{grp.group}</span>
+                <div className="tabgroup-tabs">
+                  {grp.tabs.length === 0 && <span className="tab ghost">— phases —</span>}
+                  {grp.tabs.map((t) => (
+                    <button key={t.id} className={`tab ${view === t.id ? "on" : ""}`} onClick={() => setView(t.id)}>{t.label}</button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </nav>
+        </header>
+        <StatsBar />
+        <div className="body">
+          <ControlPanel />
+          <main className="main">
+            {view === "overview" && (
+              <PageArchetype title="Overview"
+                viz={<div className="kv">Foundation built &amp; gated (Tier 0). Algorithm components
+                  (C1–C22) land here phase by phase — each with its own Visualization / Data /
+                  Control / Adjustment page, gated on real numbers + a screenshot.</div>} />
+            )}
+          </main>
+        </div>
+      </div>
+    </GlobalProvider>
+  );
+}

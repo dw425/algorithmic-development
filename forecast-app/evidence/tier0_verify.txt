@@ -1,0 +1,14 @@
+=== backend imports ===
+backend ok {'status': 'ok', 'phase': 1}
+=== backend math gates (pytest) ===
+.......                                                                  [100%]
+7 passed in 0.04s
+=== frontend typecheck (tsc) ===
+=== render gate (start servers → assert content → teardown) ===
+ERRORS: (none)
+EXPECTED CONTENT: present
+BODY: ⬡ Algorithmic Forecasting · PIPELINE · Overview · FORECAST · — phases — · VECTORS · — phases — · SPATIAL · — phases — · EXPERIMENTS · — phases — · 4 stocks: MSFT, AAPL, NVDA, JNJ · 2025-01-01 → 2026-01-01 · 1d · 1-step · target 70% · run #0 · STOCKS 4 OF 10 · MSFT x · AAPL x · NVDA x · JNJ x · DATE RANGE · GRANULARITY · Daily · Weekly · Monthly · H
+RENDER GATE PASS
+
+ALL GATES PASS ✅
+EXIT 0

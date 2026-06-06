@@ -14,21 +14,21 @@ Sub-phases per component: **E**=engine+math · **D**=data page · **V**=viz page
 
 ---
 
-## TIER 0 — Foundation & harnesses (P1–12)  *(REBUILD — fresh from scratch)*
+## TIER 0 — Foundation & harnesses (P1–12)  *(REBUILD — COMPLETE, gated)*
 | P | Step | Status | Evidence |
 |---|---|---|---|
-| 1 | Repo scaffold + boots | ✅ | fresh FastAPI `/health` + Vite react-ts; `verify.sh` ALL GATES PASS |
-| 2 | pytest harness (real data) | ☐ | |
-| 3 | Render/screenshot harness | ☐ | |
-| 4 | Validation harness (math utils) | ☐ | |
-| 5 | Data fetch + cache (any ticker/interval/range) | ☐ | (raw data archived; loader to be rebuilt+gated) |
-| 6 | Universe endpoint | ☐ | |
-| 7 | App shell (tabs + left panel + router) | ☐ | |
-| 8 | Global controls context | ☐ | |
-| 9 | Theme + stats bar | ☐ | |
-| 10 | Page archetype template (Control/Viz/Data/Adjustment) | ☐ | |
-| 11 | FE↔BE contract test | ☐ | |
-| 12 | `make verify` all-gates runner | 🔨 | verify.sh exists + green for P1; grows each phase |
+| 1 | Repo scaffold + boots | ✅ | FastAPI `/health`; verify EXIT 0 |
+| 2 | pytest harness (real data) | ✅ | 7 passed (evidence/tier0_verify.txt) |
+| 3 | Render/screenshot harness | ✅ | rendertest.mjs — asserts content; RENDER GATE PASS |
+| 4 | Validation harness (math utils) | ✅ | validation.py + self-tests |
+| 5 | Data loader (any ticker/interval/range + CSV) | ✅ | test_fetch_real/weekly/csv pass |
+| 6 | Universe endpoint | ✅ | /api/universe; test_universe_nonempty |
+| 7 | App shell (tabs + left panel + router) | ✅ | render.png; RENDER GATE PASS |
+| 8 | Global controls context | ✅ | shell renders; picker/date/gran/horizon/target |
+| 9 | Theme + stats bar | ✅ | dark theme + StatsBar (fix phase) |
+| 10 | Page archetype template (Viz/Data/Control/Adjustment) | ✅ | PageArchetype.tsx; Overview uses it |
+| 11 | FE↔BE contract test | ✅ | ControlPanel loads /api/universe; 0 console errors |
+| 12 | `verify.sh` all-gates runner (self-contained) | ✅ | starts servers→pytest+tsc+render→teardown; EXIT 0 |
 
 ## TIERS 1–6 — Algorithm components (P13–122)
 | # | Algorithm step (component) | P | E | D | V | C | A | Evidence |
@@ -109,3 +109,11 @@ cross-page-consistency assertion, and a formal end-to-end held-out-lift report (
 **Honest bottom line:** the **ALGORITHM is complete and validated** (the contract you set: every
 step in the build, math-proven). The **full 132-phase / 88-page dashboard is NOT 100%** — engine
 ~95%, dashboard ~40%, Tier-7 ~50%. I will not claim otherwise.
+
+### Report 1 (REBUILD) — Tier 0 complete (P1–12) · 2026-06-06
+**12/12 ✅, gated, self-contained `verify.sh` EXIT 0** (backend import · 7 pytest · tsc · render-with-content-assert).
+- **Gaps found in analysis:** (1) render gate too weak (errors-only); (2) verify.sh not self-contained; (3) no context bar.
+- **3 improvements implemented (fix phase):** (1) render gate now ASSERTS expected content (no silent blanks);
+  (2) verify.sh starts servers → renders → tears down (one command proves everything, OG8); (3) StatsBar shows applied global state.
+- **Algorithm-step completeness:** 0/22 components (Tier 1 next). Foundation is real and gated.
+- **Next 10 (P13–22):** C1 Data validate/clean + C2 Stationarity — engine math-gate then the 4 pages each.
