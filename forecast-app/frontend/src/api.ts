@@ -29,3 +29,13 @@ export async function getStationarity(ticker: string, interval = "1d"): Promise<
   if (!r.ok) throw new Error(`stationarity failed: ${r.status}`);
   return r.json();
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function get(path: string): Promise<any> {
+  const r = await fetch(`${BASE}${path}`);
+  if (!r.ok) throw new Error(`${path} failed: ${r.status}`);
+  return r.json();
+}
+export const getMultiScale = (t: string, iv = "1d") => get(`/api/multiscale?ticker=${t}&interval=${iv}`);
+export const getPredictability = (t: string, iv = "1d") => get(`/api/predictability?ticker=${t}&interval=${iv}`);
+export const getModels = (t: string, iv = "1d") => get(`/api/models?ticker=${t}&interval=${iv}`);

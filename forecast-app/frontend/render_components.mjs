@@ -4,6 +4,9 @@ import { chromium } from "playwright";
 const TABS = [
   ["Data clean", "Data clean"],
   ["Stationarity", "Stationarity"],
+  ["Multi-scale", "Multi-scale"],
+  ["Predictability", "Predictability"],
+  ["Base models", "Base models"],
 ];
 const b = await chromium.launch();
 const p = await b.newPage();

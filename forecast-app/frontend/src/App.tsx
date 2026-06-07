@@ -4,6 +4,9 @@ import ControlPanel from "./ControlPanel";
 import PageArchetype from "./PageArchetype";
 import DataClean from "./DataClean";
 import Stationarity from "./Stationarity";
+import MultiScale from "./MultiScale";
+import Predictability from "./Predictability";
+import BaseModels from "./BaseModels";
 import "./App.css";
 
 function StatsBar() {
@@ -21,8 +24,8 @@ function StatsBar() {
 // Top-tab structure. Component tabs fill in as each algorithm phase lands (Tier 1+).
 const GROUPS: { group: string; tabs: { id: string; label: string }[] }[] = [
   { group: "Pipeline", tabs: [{ id: "overview", label: "Overview" }] },
-  { group: "Data", tabs: [{ id: "clean", label: "Data clean" }, { id: "stationarity", label: "Stationarity" }] },
-  { group: "Forecast", tabs: [] },
+  { group: "Data", tabs: [{ id: "clean", label: "Data clean" }, { id: "stationarity", label: "Stationarity" }, { id: "multiscale", label: "Multi-scale" }] },
+  { group: "Forecast", tabs: [{ id: "predictability", label: "Predictability" }, { id: "models", label: "Base models" }] },
   { group: "Vectors", tabs: [] },
   { group: "Spatial", tabs: [] },
   { group: "Experiments", tabs: [] },
@@ -62,6 +65,9 @@ export default function App() {
             )}
             {view === "clean" && <DataClean />}
             {view === "stationarity" && <Stationarity />}
+            {view === "multiscale" && <MultiScale />}
+            {view === "predictability" && <Predictability />}
+            {view === "models" && <BaseModels />}
           </main>
         </div>
       </div>

@@ -38,9 +38,9 @@ Sub-phases per component: **E**=engine+math · **D**=data page · **V**=viz page
 A = adjustment (only the global Scenario page exists; per-component ☐).*
 | C1 | Data validate & clean (Benford/Hampel/impute) | 13–17 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c1 |
 | C2 | Stationarity & transform (ADF/KPSS/STL) | 18–22 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c2 (RW→non-stationary) |
-| C3 | Multi-scale aggregation | 23–27 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c3 |
-| C4 | Predictability (Hurst/Lyapunov/Takens) | 28–32 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c4 + DFA fix |
-| C5 | Base model pool (11 models) | 33–37 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c5 (hand-recompute) |
+| C3 | Multi-scale aggregation | 23–27 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
+| C4 | Predictability (Hurst/Lyapunov/Takens) | 28–32 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
+| C5 | Base model pool (11 models) | 33–37 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
 | C6 | Ensemble combination (error-cov + shrink) | 38–42 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c6 (Σw=1) |
 | C7 | Conformal + ACI bands | 43–47 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c7; Forecast page |
 | C8 | Debiasing (Mincer–Zarnowitz) | 48–52 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c8 (bias removed) |
