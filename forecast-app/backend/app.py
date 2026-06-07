@@ -129,6 +129,29 @@ def api_louvain(tickers: str):
     return spatial.louvain_map(tk)
 
 
+@app.get("/api/runs")
+def api_runs():
+    """Tier 7 — browse the batch run results + held-out summary."""
+    import os
+    p = os.path.join(os.path.dirname(__file__), "run_results.json")
+    if not os.path.exists(p):
+        return {"summary": {"n": 0}, "rows": [], "status": "running"}
+    try:
+        d = json.load(open(p))
+    except Exception:  # noqa - file may be mid-write by the batch runner
+        return {"summary": {"n": 0}, "rows": [], "status": "running"}
+    rows = [{"ticker": k, **{m: v.get(m) for m in ("coverage", "avg_width_pct", "naive_lift_pct", "n_eval")}}
+            for k, v in d.items() if isinstance(v, dict) and v.get("ok")]
+    rows.sort(key=lambda r: -(r.get("coverage") or 0))
+    cov = [r["coverage"] for r in rows]
+    lift = [r["naive_lift_pct"] for r in rows]
+    summary = {"n": len(rows),
+               "mean_coverage": round(float(np.mean(cov)), 1) if cov else 0,
+               "mean_naive_lift": round(float(np.mean(lift)), 2) if lift else 0,
+               "pct_beating_naive": round(float(np.mean([x > 0 for x in lift])) * 100, 1) if lift else 0}
+    return {"summary": summary, "rows": rows[:500]}
+
+
 @app.get("/api/funnel")
 def api_funnel(ticker: str, interval: str = "1d"):
     """C18 — vector drop-off funnel."""

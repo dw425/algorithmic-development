@@ -15,6 +15,7 @@ const TABS = [
   ["Funnel", "Funnel"],
   ["TPA", "TPA"],
   ["Diagnostics", "Diagnostics"],
+  ["Repository", "Repository"],
 ];
 const b = await chromium.launch();
 const p = await b.newPage();
