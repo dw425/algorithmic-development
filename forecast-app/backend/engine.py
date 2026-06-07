@@ -176,7 +176,7 @@ def _aci(alpha, miss, a0, g=0.05):
 
 
 def forecast_walkforward(rows, target=0.70, eval_start="2025-01-01", eval_end="2026-01-01",
-                         min_hist=40, recent=120, win=60):
+                         min_hist=40, recent=120, win=60, debias=True):
     dates = [r["date"] for r in rows]
     p = np.array([r["close"] for r in rows], float)
     n = len(p)
@@ -199,7 +199,7 @@ def forecast_walkforward(rows, target=0.70, eval_start="2025-01-01", eval_end="2
         cal = cal[np.isfinite(cal)]
         if len(cal) < 20:
             continue
-        bias = float(np.mean(cal))                    # C8 debias
+        bias = float(np.mean(cal)) if debias else 0.0   # C8 debias (toggleable)
         pred = float(ens[i]) * (1 + bias)
         c = cal - bias
         qlo, qhi = float(np.quantile(c, alpha / 2)), float(np.quantile(c, 1 - alpha / 2))

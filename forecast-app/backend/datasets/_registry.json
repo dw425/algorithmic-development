@@ -1,0 +1,53 @@
+{
+  "synthetic_series": {
+    "id": "synthetic_series",
+    "name": "synthetic_series",
+    "source": "builtin",
+    "rows": 400,
+    "cols": 2,
+    "columns": [
+      "date",
+      "value"
+    ]
+  },
+  "diabetes": {
+    "id": "diabetes",
+    "name": "diabetes",
+    "source": "builtin",
+    "rows": 442,
+    "cols": 11,
+    "columns": [
+      "age",
+      "sex",
+      "bmi",
+      "bp",
+      "s1",
+      "s2",
+      "s3",
+      "s4",
+      "s5",
+      "s6",
+      "target"
+    ]
+  },
+  "diabetes_cond": {
+    "id": "diabetes_cond",
+    "name": "diabetes_cond",
+    "source": "harmonized:diabetes",
+    "rows": 442,
+    "cols": 11,
+    "columns": [
+      "age",
+      "sex",
+      "bmi",
+      "bp",
+      "s1",
+      "s2",
+      "s3",
+      "s4",
+      "s5",
+      "s6",
+      "target"
+    ]
+  }
+}

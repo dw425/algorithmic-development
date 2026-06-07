@@ -94,16 +94,20 @@ def tpa(rows, m=100, c=0.001, tau=0.01, train_frac=0.6,
     ks = np.arange(-m, m + 1)
     idx = [i for i in range(min_hist, n - 1) if eval_start <= dates[i] < eval_end]
     thread, edges, breaches = [], [], 0
+    centers, actuals, wvals, winners, tdates2 = [], [], [], [], []
     for i in idx:
         P = p[i]
         drive = float(np.clip(np.mean(lr[max(1, i - 10):i + 1]), -0.03, 0.03))
-        F = P * (1 + ks * c) * np.exp(drive)
+        center = P * np.exp(drive)
+        F = center * (1 + ks * c)
         actual = p[i + 1]
         err = np.abs(F - actual)
-        kstar = int(ks[int(np.argmin(err))])
+        ji = int(np.argmin(err)); kstar = int(ks[ji])
         thread.append(kstar * c)
         edges.append(abs(F[m] - actual) - float(err.min()))
         breaches += int(not (F.min() <= actual <= F.max()))
+        centers.append(float(center)); actuals.append(float(actual))
+        wvals.append(float(F[ji])); winners.append(kstar); tdates2.append(dates[i + 1])
     if len(thread) < 20:
         return {"points": 2 * m + 1, "n": len(thread), "significant": False, "modifier_pct": 0.0}
     thread = np.array(thread)
@@ -111,9 +115,21 @@ def tpa(rows, m=100, c=0.001, tau=0.01, train_frac=0.6,
     M = float(np.median(thread[:ntr]))
     ac = float(np.corrcoef(thread[:-1], thread[1:])[0, 1]) if np.std(thread) > 0 else 0.0
     significant = bool(ac > 0.1 and np.mean(edges) > 0)
+    tdates = [dates[i] for i in idx]
+    hist_c, hist_e = np.histogram(thread * 100, bins=25)
+    L = 150  # cap the fan window so the 201-line chart stays responsive
+    fan = {"dates": tdates2[-L:], "c": c, "m": m,
+           "center": [round(x, 3) for x in centers[-L:]],
+           "actual": [round(x, 3) for x in actuals[-L:]],
+           "winner_value": [round(x, 3) for x in wvals[-L:]],
+           "winner_offset_pct": [round(k * c * 100, 3) for k in winners[-L:]]}
     return {"points": 2 * m + 1, "n": len(thread), "modifier_pct": round(M * 100, 3),
             "significant": significant, "thread_autocorr": round(ac, 3),
-            "breach_rate_pct": round(100 * breaches / len(thread), 1)}
+            "breach_rate_pct": round(100 * breaches / len(thread), 1),
+            "median_offset_pct": round(M * 100, 3), "fan": fan,
+            "thread_dates": tdates, "thread_pct": [round(float(x) * 100, 3) for x in thread],
+            "offset_hist_counts": [int(x) for x in hist_c],
+            "offset_hist_edges": [round(float(x), 3) for x in hist_e]}
 
 
 # ---------- C22: outward eye ----------

@@ -1,0 +1,119 @@
+{
+  "synthetic_series": {
+    "ingest": {
+      "status": "done",
+      "config": {},
+      "summary": {
+        "rows": 400,
+        "cols": 2
+      }
+    },
+    "profile": {
+      "status": "done",
+      "config": {},
+      "summary": {
+        "missing_pct": 0.0,
+        "target": "value"
+      }
+    },
+    "harmonize": {
+      "status": "pending",
+      "config": {},
+      "summary": {}
+    },
+    "sample": {
+      "status": "pending",
+      "config": {},
+      "summary": {}
+    },
+    "model": {
+      "status": "pending",
+      "config": {},
+      "summary": {}
+    },
+    "forecast": {
+      "status": "done",
+      "config": {
+        "target": "value",
+        "coverage": 0.7
+      },
+      "summary": {
+        "coverage": 70.6,
+        "width_pct": 8.49
+      }
+    }
+  },
+  "diabetes": {
+    "ingest": {
+      "status": "done",
+      "config": {},
+      "summary": {
+        "rows": 442,
+        "cols": 11
+      }
+    },
+    "profile": {
+      "status": "done",
+      "config": {},
+      "summary": {
+        "missing_pct": 0.0,
+        "target": "target"
+      }
+    },
+    "harmonize": {
+      "status": "done",
+      "config": {
+        "missing": "median",
+        "outliers": "hampel",
+        "hampel_k": 3.0,
+        "normalize": "zscore",
+        "encode": "none"
+      },
+      "summary": {
+        "rows": 442,
+        "cols": 11,
+        "missing_pct": 0.0,
+        "outliers_conditioned": 677
+      }
+    },
+    "sample": {
+      "status": "done",
+      "config": {
+        "method": "rolling_origin",
+        "test_size": 0.2,
+        "folds": 4,
+        "embargo": 5,
+        "by": null,
+        "seed": 0
+      },
+      "summary": {
+        "method": "rolling_origin"
+      }
+    },
+    "model": {
+      "status": "done",
+      "config": {
+        "model": "random_forest",
+        "target": "target"
+      },
+      "summary": {
+        "n": 89,
+        "mae": 44.1474,
+        "rmse": 54.8651,
+        "r2": 0.3941,
+        "mape_pct": 43.52
+      }
+    },
+    "forecast": {
+      "status": "done",
+      "config": {
+        "target": "target",
+        "coverage": 0.7
+      },
+      "summary": {
+        "coverage": 71.2,
+        "width_pct": 134.77
+      }
+    }
+  }
+}
