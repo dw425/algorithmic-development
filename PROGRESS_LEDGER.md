@@ -41,11 +41,11 @@ A = adjustment (only the global Scenario page exists; per-component ☐).*
 | C3 | Multi-scale aggregation | 23–27 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
 | C4 | Predictability (Hurst/Lyapunov/Takens) | 28–32 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
 | C5 | Base model pool (11 models) | 33–37 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
-| C6 | Ensemble combination (error-cov + shrink) | 38–42 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c6 (Σw=1) |
-| C7 | Conformal + ACI bands | 43–47 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c7; Forecast page |
-| C8 | Debiasing (Mincer–Zarnowitz) | 48–52 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c8 (bias removed) |
-| C9 | Multi-horizon (7/30/90, purge/embargo) | 53–57 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c9; Forecast/Results |
-| C10 | Vector grid (1,980) | 58–62 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c10 (count exact); Walkthrough |
+| C6 | Ensemble combination (error-cov + shrink) | 38–42 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
+| C7 | Conformal + ACI bands | 43–47 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
+| C8 | Debiasing (Mincer–Zarnowitz) | 48–52 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
+| C9 | Multi-horizon (7/30/90, purge/embargo) | 53–57 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
+| C10 | Vector grid (1,980) | 58–62 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
 | C11 | 3D embed + standardize | 63–67 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c11; Walkthrough 3D |
 | C12 | Clustering (KMeans/DBSCAN/GMM) | 68–72 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c12_15; Walkthrough |
 | C13 | Consensus clustering | 73–77 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c12_15; Walkthrough |

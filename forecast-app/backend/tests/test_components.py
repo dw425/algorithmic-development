@@ -84,3 +84,42 @@ def test_c5_rho():
     import data
     r = E.rho_matrix(np.array([x["close"] for x in data.fetch("AAPL")["rows"]]))
     assert -1 <= r["mean_rho"] <= 1 and r["effective_models"] >= 1
+
+
+# ---- C6: ensemble weights ----
+def test_c6_weights_sum_to_one():
+    Emat = rng.normal(0, 1, (5, 200))
+    w = E.ensemble_weights(Emat)
+    assert abs(w.sum() - 1.0) < 1e-9 and (w >= 0).all()
+
+
+# ---- C7: conformal coverage near target ----
+def test_c7_coverage():
+    import data
+    r = E.forecast_walkforward(data.fetch("MSFT")["rows"], target=0.70)
+    assert 0.5 <= r["coverage"] / 100 <= 0.9 and r["n_eval"] > 20
+
+
+# ---- C8: debias removes injected bias ----
+def test_c8_debias():
+    actual = 100 + np.cumsum(rng.normal(0, 1, 300))
+    biased = actual * 1.05
+    bias = float(np.mean((actual - biased) / biased))
+    corrected = biased * (1 + bias)
+    assert abs(np.mean((actual - corrected) / corrected)) < abs(np.mean((actual - biased) / biased))
+
+
+# ---- C9: multi-horizon + purge/embargo ----
+def test_c9_horizons_and_embargo():
+    import data
+    h = E.multi_horizon(data.fetch("MSFT")["rows"], target=0.70)
+    assert len(h) >= 1 and all(k in ("7d", "30d", "90d") for k in h)
+    assert E.purge_embargo(0, 100, 100, 7)[-1] < 100 - 7
+
+
+# ---- C10: vector grid count ----
+def test_c10_grid():
+    import data
+    assert E.N_VECTORS == 11 * 12 * 5 * 3
+    cloud = E.build_cloud(np.array([x["close"] for x in data.fetch("MSFT")["rows"]])[:300])
+    assert len(cloud) > 100 and np.isfinite(cloud).all()

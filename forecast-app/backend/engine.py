@@ -151,3 +151,138 @@ def rho_matrix(prices, win=60):
     rho = float(np.nanmean(off))
     N = len(MODELS)
     return {"mean_rho": round(rho, 3), "effective_models": round(N / (1 + (N - 1) * max(rho, 0)), 2), "pool": N}
+
+
+# ---------- C6: ensemble combination (error-cov + shrinkage) ----------
+def ensemble_weights(error_matrix, shrink=0.5):
+    """Bates-Granger inverse-error-covariance weights, shrunk to equal. Sum to 1."""
+    E = np.asarray(error_matrix, float)              # (n_models, n_obs)
+    k = E.shape[0]
+    if k == 1:
+        return np.array([1.0])
+    Sigma = np.cov(E) + 1e-6 * np.eye(k)
+    w = np.clip(np.linalg.pinv(Sigma) @ np.ones(k), 0, None)
+    w = w / (w.sum() or 1.0)
+    w = shrink * (np.ones(k) / k) + (1 - shrink) * w
+    return w / w.sum()
+
+
+# ---------- C7+C8: conformal+ACI bands with debiasing ----------
+FAST = ["naive", "drift", "ses", "linear", "momentum", "meanrev", "kalman"]
+
+
+def _aci(alpha, miss, a0, g=0.05):
+    return float(min(0.6, max(0.005, alpha + g * (a0 - miss))))
+
+
+def forecast_walkforward(rows, target=0.70, eval_start="2025-01-01", eval_end="2026-01-01",
+                         min_hist=40, recent=120, win=60):
+    dates = [r["date"] for r in rows]
+    p = np.array([r["close"] for r in rows], float)
+    n = len(p)
+    if n < min_hist + 5:
+        return {"coverage": 0.0, "avg_width_pct": 0.0, "n_eval": 0, "target": int(target * 100), "rows": []}
+    ens = np.full(n, np.nan)
+    for i in range(min_hist, n):
+        w = p[max(0, i - win):i]
+        ens[i] = float(np.mean([MODELS[m](w) for m in FAST]))
+    rel = (p - ens) / ens
+    a0 = 1 - target
+    alpha = a0
+    out, hits = [], 0
+    for i in range(min_hist, n):
+        if not (eval_start <= dates[i] < eval_end):
+            continue
+        cal = rel[max(min_hist, i - recent):i]
+        cal = cal[np.isfinite(cal)]
+        if len(cal) < 20:
+            continue
+        bias = float(np.mean(cal))                    # C8 debias
+        pred = float(ens[i]) * (1 + bias)
+        c = cal - bias
+        qlo, qhi = float(np.quantile(c, alpha / 2)), float(np.quantile(c, 1 - alpha / 2))
+        lo, hi = pred * (1 + qlo), pred * (1 + qhi)
+        actual = float(p[i])
+        hit = bool(lo <= actual <= hi)
+        hits += int(hit)
+        out.append({"date": dates[i], "pred": round(pred, 2), "lo": round(lo, 2),
+                    "hi": round(hi, 2), "actual": round(actual, 2), "hit": hit,
+                    "width_pct": round((hi - lo) / pred * 100, 2)})
+        alpha = _aci(alpha, 0 if hit else 1, a0)      # C7 ACI
+    cov = hits / len(out) * 100 if out else 0.0
+    return {"coverage": round(cov, 1),
+            "avg_width_pct": round(float(np.mean([r["width_pct"] for r in out])), 2) if out else 0.0,
+            "n_eval": len(out), "target": int(target * 100), "rows": out,
+            "predictability": predictability(p[:max(min_hist, n - 250)]) if n > 80 else None}
+
+
+# ---------- C9: multi-horizon (7/30/90) with purge/embargo ----------
+def purge_embargo(cal_lo, cal_hi, eval_i, h):
+    return [j for j in range(cal_lo, cal_hi) if j < eval_i - h]
+
+
+def multi_horizon(rows, target=0.70, horizons=(7, 30, 90), min_hist=70, recent=150,
+                  eval_start="2025-01-01", eval_end="2026-01-01"):
+    dates = [r["date"] for r in rows]
+    p = np.array([r["close"] for r in rows], float)
+    n = len(p)
+    lr = np.diff(np.log(np.maximum(p, 1e-9)), prepend=0.0)
+    vol = np.array([np.std(lr[max(1, i - 20):i]) if i > 2 else 0 for i in range(n)])
+    out = {}
+    a0 = 1 - target
+    for h in horizons:
+        sres = np.full(n, np.nan)
+        scale = np.maximum(vol * np.sqrt(h), 1e-4)
+        for i in range(min_hist, n - h):
+            drift = float(np.clip(np.mean(lr[max(1, i - 20):i]), -0.01, 0.01))
+            pt = p[i - 1] * np.exp(drift * h * 0.5)
+            sres[i] = (p[i + h - 1] - pt) / (pt * scale[i])
+        hits, ws, tot = 0, [], 0
+        for i in range(min_hist, n - h):
+            if not (eval_start <= dates[i] < eval_end):
+                continue
+            keep = purge_embargo(max(min_hist, i - recent), i, i, h)
+            cal = sres[keep]; cal = cal[np.isfinite(cal)]
+            if len(cal) < 20:
+                continue
+            drift = float(np.clip(np.mean(lr[max(1, i - 20):i]), -0.01, 0.01))
+            pt = p[i - 1] * np.exp(drift * h * 0.5)
+            q1, q2 = np.quantile(cal, a0 / 2), np.quantile(cal, 1 - a0 / 2)
+            lo, hi = pt + q1 * pt * scale[i], pt + q2 * pt * scale[i]
+            a = float(p[i + h - 1])
+            hits += int(lo <= a <= hi); ws.append((hi - lo) / pt); tot += 1
+        if tot:
+            out[f"{h}d"] = {"coverage": round(100 * hits / tot, 1),
+                            "avg_width_pct": round(float(np.mean(ws)) * 100, 2), "n": tot}
+    return out
+
+
+# ---------- C10: vector grid (1,980) ----------
+LOOKBACKS = [5, 8, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80]
+SCALES = [1, 2, 5, 10, 21]
+POINTS = [0.5, 1.0, 1.5]
+N_VECTORS = len(MODELS) * len(LOOKBACKS) * len(SCALES) * len(POINTS)
+
+
+def build_cloud(prices):
+    """1,980 next-step estimates: 11 models x 12 lookbacks x 5 scales x 3 points."""
+    p = np.asarray(prices, float)
+    last = p[-1]
+    vals = []
+    for S in SCALES:
+        coarse = aggregate(p[-max(LOOKBACKS) * S:], S) if len(p) >= max(LOOKBACKS) * S else p
+        for L in LOOKBACKS:
+            c = coarse[-L:] if len(coarse) >= L else coarse
+            if len(c) < 2 or c[-1] <= 0:
+                continue
+            for fn in MODELS.values():
+                try:
+                    f = float(fn(c))
+                except Exception:  # noqa
+                    f = c[-1]
+                move = min(max((f / c[-1]) ** (1.0 / max(S, 1)), 0.9), 1.1) if f > 0 else 1.0
+                for P in POINTS:
+                    est = last * move ** P
+                    if 0.5 * last < est < 2.0 * last:
+                        vals.append(est)
+    return np.array(vals)

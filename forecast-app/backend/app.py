@@ -79,3 +79,32 @@ def api_models(ticker: str, interval: str = "1d", win: int = 60):
         fdates.append(dates[i]); actual.append(p[i])
     return {"ticker": ticker, "dates": fdates, "actual": actual, "forecasts": fc,
             "rho": engine.rho_matrix(np.array(p, float))}
+
+
+@app.get("/api/forecast")
+def api_forecast(ticker: str, target: float = 0.70, interval: str = "1d",
+                 eval_start: str = "2025-01-01", eval_end: str = "2026-01-01"):
+    """C7+C8 — conformal+ACI range with debiasing."""
+    rows = data.fetch(ticker, interval=interval)["rows"]
+    res = engine.forecast_walkforward(rows, target=target, eval_start=eval_start, eval_end=eval_end)
+    res["ticker"] = ticker
+    return res
+
+
+@app.get("/api/horizons")
+def api_horizons(ticker: str, target: float = 0.70, interval: str = "1d"):
+    """C9 — multi-horizon 7/30/90."""
+    rows = data.fetch(ticker, interval=interval)["rows"]
+    return {"ticker": ticker, "horizons": engine.multi_horizon(rows, target=target)}
+
+
+@app.get("/api/cloud")
+def api_cloud(ticker: str, interval: str = "1d"):
+    """C10 — vector grid histogram."""
+    rows = data.fetch(ticker, interval=interval)["rows"]
+    p = np.array([r["close"] for r in rows], float)
+    cloud = engine.build_cloud(p[:300] if len(p) > 300 else p)
+    counts, edges = np.histogram(cloud, bins=40)
+    return {"ticker": ticker, "n_vectors": engine.N_VECTORS, "n_used": int(len(cloud)),
+            "hist_counts": [int(x) for x in counts], "hist_edges": [round(float(x), 2) for x in edges],
+            "last": round(float(p[-1]), 2)}

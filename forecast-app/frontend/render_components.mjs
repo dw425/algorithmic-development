@@ -7,6 +7,9 @@ const TABS = [
   ["Multi-scale", "Multi-scale"],
   ["Predictability", "Predictability"],
   ["Base models", "Base models"],
+  ["Forecast", "Forecast"],
+  ["Multi-horizon", "Multi-horizon"],
+  ["Vector grid", "Vector grid"],
 ];
 const b = await chromium.launch();
 const p = await b.newPage();

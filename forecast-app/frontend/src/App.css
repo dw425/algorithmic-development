@@ -48,4 +48,10 @@ table.mini th, table.mini td { padding: 6px 12px; text-align: left; border-botto
 table.mini th { background: #1c2030; color: #9aa3ba; font-size: 11px; text-transform: uppercase; }
 tr.miss { background: #1e1518; }
 input[type=range] { width: 220px; }
+.cards { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+.card { background: #151823; border: 1px solid #20242f; border-radius: 10px; padding: 12px 16px; min-width: 120px; }
+.cnum { font-size: 22px; font-weight: 800; }
+.clab { font-size: 11px; color: #8b93a7; text-transform: uppercase; letter-spacing: .03em; margin-top: 2px; }
+.good { color: #34d399; } .mid { color: #f0b429; } .bad { color: #f87171; }
+h2 { font-size: 17px; color: #b9c0d4; margin: 22px 0 10px; }
 .err { background: #3a1518; color: #f87171; padding: 12px; border-radius: 8px; }
