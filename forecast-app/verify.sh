@@ -26,6 +26,8 @@ for i in $(seq 1 30); do
   sleep 1
 done
 ( cd frontend && node rendertest.mjs http://127.0.0.1:5173/ render.png "Algorithmic Forecasting" )
+echo "=== component pages render gate ==="
+( cd frontend && node render_components.mjs )
 
 echo ""
 echo "ALL GATES PASS ✅"
