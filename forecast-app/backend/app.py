@@ -9,6 +9,7 @@ import data
 import prep
 import engine
 import spatial
+import advanced
 
 app = FastAPI(title="Algorithmic Forecasting")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -126,3 +127,40 @@ def api_louvain(tickers: str):
     """C16 — Louvain data-gravity communities + cluster-to-cluster dependency."""
     tk = [t.strip().upper() for t in tickers.split(",") if t.strip()][:50]
     return spatial.louvain_map(tk)
+
+
+@app.get("/api/funnel")
+def api_funnel(ticker: str, interval: str = "1d"):
+    """C18 — vector drop-off funnel."""
+    p = np.array([r["close"] for r in data.fetch(ticker, interval=interval)["rows"]], float)
+    return {"ticker": ticker, "funnel": advanced.funnel(p[:300] if len(p) > 300 else p)}
+
+
+@app.get("/api/tpa")
+def api_tpa(ticker: str, interval: str = "1d", m: int = 100):
+    """C21 — Threaded Point Analysis."""
+    out = advanced.tpa(data.fetch(ticker, interval=interval)["rows"], m=m)
+    out["ticker"] = ticker
+    return out
+
+
+@app.get("/api/diagnostics")
+def api_diagnostics(ticker: str, target: float = 0.70, interval: str = "1d"):
+    """C17 net-results + C19 MCS + C20 calibration + C22 outward eye."""
+    rows = data.fetch(ticker, interval=interval)["rows"]
+    p = np.array([r["close"] for r in rows], float)
+    pp = p[:300] if len(p) > 300 else p
+    g = spatial.geo_consensus(pp)
+    vals, _, _ = spatial.geo_cloud(pp)
+    net = advanced.net_results(vals, g.get("forecast", float(np.median(vals)))) if len(vals) else {}
+    win = 60
+    loss = {m: [] for m in engine.MODELS}
+    for i in range(win, len(p)):
+        mp = engine.model_forecasts(p[i - win:i])
+        for m in engine.MODELS:
+            loss[m].append(abs((mp[m] - p[i]) / p[i]))
+    surv = advanced.model_confidence_set({m: np.array(v) for m, v in loss.items()}, margin=1.5)
+    fc = engine.forecast_walkforward(rows, target=target)
+    return {"ticker": ticker, "net_results": net, "mcs_survivors": surv,
+            "mcs_pool": len(engine.MODELS), "calibration": advanced.reliability(fc["rows"], target),
+            "outward": advanced.outward_eye(rows)}

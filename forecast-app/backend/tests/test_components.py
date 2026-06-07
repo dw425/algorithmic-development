@@ -163,3 +163,51 @@ def test_c16_louvain_symmetric():
     assert np.allclose(dm, dm.T)   # dependency matrix symmetric
     for e in m["edges"]:
         assert e["weight"] >= 0
+
+
+# ---- C17-C22: final tier ----
+import advanced as AD  # noqa
+
+
+def test_c17_inverse_net():
+    v = np.array([100.0] * 50 + [110.0] * 30)
+    idf = AD.inverse_drift(v, 100.0)
+    assert 0 <= idf["coherence_pct"] <= 100
+    nr = AD.net_results(v, 100.0)
+    assert 0 <= nr["convergence_pct"] <= 100
+
+
+def test_c18_funnel_monotonic():
+    fn = AD.funnel(_px()[:300])
+    counts = [s["count"] for s in fn]
+    assert counts == sorted(counts, reverse=True)   # nested drop-off
+    _, stab = AD.bootstrap_stability(_px()[:300])
+    assert 0 <= stab <= 1
+
+
+def test_c19_mcs():
+    loss = {"good": np.abs(rng.normal(0, 0.5, 200)), "bad": np.abs(rng.normal(3, 0.5, 200))}
+    surv = AD.model_confidence_set(loss, margin=1.0)
+    assert "good" in surv and "bad" not in surv
+
+
+def test_c20_isotonic_monotone():
+    nom = np.linspace(0.1, 0.9, 9)
+    emp = nom + rng.normal(0, 0.05, 9)        # noisy monotone
+    cal, _ = AD.isotonic_recalibrate(nom, emp)
+    assert all(cal[i] <= cal[i + 1] + 1e-9 for i in range(len(cal) - 1))  # monotone non-decreasing
+
+
+def test_c21_tpa():
+    import data
+    r = AD.tpa(data.fetch("MSFT")["rows"], m=100)
+    assert r["points"] == 201
+    if not r["significant"]:
+        assert abs(r["modifier_pct"]) < 5      # withheld/small when not significant
+
+
+def test_c22_outward():
+    flat = np.zeros(200)
+    drifted = np.concatenate([np.zeros(100), np.full(100, 0.5)])
+    assert AD.page_hinkley(drifted)["drift"] and not AD.page_hinkley(flat)["drift"]
+    assert AD.psi(rng.normal(0, 1, 300), rng.normal(3, 1, 300)) > 0.25

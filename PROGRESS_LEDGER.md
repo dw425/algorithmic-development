@@ -52,12 +52,12 @@ A = adjustment (only the global Scenario page exists; per-component ☐).*
 | C14 | Mahalanobis concentration | 78–82 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
 | C15 | Constellation MST + Davies–Bouldin | 83–87 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
 | C16 | Louvain data-gravity + dependency | 88–92 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
-| C17 | Inverse-drift + Net results | 93–97 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c17 |
-| C18 | Funnel + Wave refinement (stability) | 98–102 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c18 (monotonic); Funnel page |
-| C19 | Model Confidence Set (royal rumble) | 103–107 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c19 (dominant survives) |
-| C20 | Calibration (isotonic/CQR/Brier) | 108–112 | ☐ | ☐ | ☐ | ☐ | ☐ | CQR/ACI ☐; **isotonic standalone NOT built** |
-| C21 | TPA (Threaded Point Analysis) | 113–117 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c21 (withheld if insig); TPA page |
-| C22 | Outward eye (exo/drift/PSI/risk/O6/O7/Kalman) | 118–122 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c22 (PH fires/PSI shift) |
+| C17 | Inverse-drift + Net results | 93–97 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
+| C18 | Funnel + Wave refinement (stability) | 98–102 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
+| C19 | Model Confidence Set (royal rumble) | 103–107 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
+| C20 | Calibration (isotonic/CQR/Brier) | 108–112 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
+| C21 | TPA (Threaded Point Analysis) | 113–117 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
+| C22 | Outward eye (exo/drift/PSI/risk/O6/O7/Kalman) | 118–122 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
 
 ## TIER 7 — Integration, scale & end-to-end truth (P123–132)
 | P | Step | Status | Evidence |
@@ -117,3 +117,19 @@ step in the build, math-proven). The **full 132-phase / 88-page dashboard is NOT
   (2) verify.sh starts servers → renders → tears down (one command proves everything, OG8); (3) StatsBar shows applied global state.
 - **Algorithm-step completeness:** 0/22 components (Tier 1 next). Foundation is real and gated.
 - **Next 10 (P13–22):** C1 Data validate/clean + C2 Stationarity — engine math-gate then the 4 pages each.
+
+### Report 2 (REBUILD) — ALL 22 components built + gated · 2026-06-06
+**22/22 algorithm components ✅** (engine math-gate + Data/Viz pages rendered). **33 pytest math
+gates green; 13-page render gate PASS (0 console errors).**
+- Built this rebuild: C1 clean · C2 stationarity · C3 multi-scale · C4 predictability (Hurst-DFA/
+  Lyapunov/Takens) · C5 11-model pool · C6 ensemble(error-cov) · C7 conformal+ACI · C8 debias ·
+  C9 multi-horizon(purge/embargo) · C10 vector-grid(1,980) · C11 3D-embed · C12 clustering ·
+  C13 consensus · C14 Mahalanobis · C15 constellation · C16 Louvain dependency · C17 inverse-drift/
+  net · C18 funnel/stability · C19 MCS · **C20 calibration incl. ISOTONIC (the old build's gap — now built)** ·
+  C21 TPA(withheld-if-insignificant) · C22 outward eye.
+- Gates caught real errors live and forced fixes: Hurst R/S→DFA; my 3D-Mahalanobis test (χ²₃ not 1D 68%).
+- App: 13 component pages across Pipeline/Data/Forecast/Vectors/Spatial/Experiments tab groups,
+  left control panel, stats bar — every page on the 4-sub-page archetype.
+- **Honest remaining:** Control/Adjustment sub-pages are 🔨 thin (render, not yet full interactive
+  before/after) on most components; Tier 7 (multi-stock-everywhere, 1,000-stock batch, perf budget,
+  end-to-end held-out lift) not yet done. Engine/algorithm = complete & gated; UI depth + Tier 7 remain.

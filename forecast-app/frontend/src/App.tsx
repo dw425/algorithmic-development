@@ -12,6 +12,9 @@ import MultiHorizon from "./MultiHorizon";
 import VectorGrid from "./VectorGrid";
 import ClusterConsensus from "./ClusterConsensus";
 import Dependency from "./Dependency";
+import Funnel from "./Funnel";
+import TPA from "./TPA";
+import Diagnostics from "./Diagnostics";
 import "./App.css";
 
 function StatsBar() {
@@ -31,9 +34,9 @@ const GROUPS: { group: string; tabs: { id: string; label: string }[] }[] = [
   { group: "Pipeline", tabs: [{ id: "overview", label: "Overview" }] },
   { group: "Data", tabs: [{ id: "clean", label: "Data clean" }, { id: "stationarity", label: "Stationarity" }, { id: "multiscale", label: "Multi-scale" }] },
   { group: "Forecast", tabs: [{ id: "forecast", label: "Forecast" }, { id: "horizons", label: "Multi-horizon" }, { id: "predictability", label: "Predictability" }, { id: "models", label: "Base models" }] },
-  { group: "Vectors", tabs: [{ id: "vectorgrid", label: "Vector grid" }] },
+  { group: "Vectors", tabs: [{ id: "vectorgrid", label: "Vector grid" }, { id: "funnel", label: "Funnel" }, { id: "tpa", label: "TPA" }] },
   { group: "Spatial", tabs: [{ id: "cluster", label: "Cluster consensus" }, { id: "dependency", label: "Dependency mapper" }] },
-  { group: "Experiments", tabs: [] },
+  { group: "Experiments", tabs: [{ id: "diagnostics", label: "Diagnostics" }] },
 ];
 
 export default function App() {
@@ -78,6 +81,9 @@ export default function App() {
             {view === "vectorgrid" && <VectorGrid />}
             {view === "cluster" && <ClusterConsensus />}
             {view === "dependency" && <Dependency />}
+            {view === "funnel" && <Funnel />}
+            {view === "tpa" && <TPA />}
+            {view === "diagnostics" && <Diagnostics />}
           </main>
         </div>
       </div>

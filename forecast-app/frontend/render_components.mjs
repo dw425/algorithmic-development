@@ -12,6 +12,9 @@ const TABS = [
   ["Vector grid", "Vector grid"],
   ["Cluster consensus", "Cluster consensus"],
   ["Dependency mapper", "Dependency mapper"],
+  ["Funnel", "Funnel"],
+  ["TPA", "TPA"],
+  ["Diagnostics", "Diagnostics"],
 ];
 const b = await chromium.launch();
 const p = await b.newPage();
