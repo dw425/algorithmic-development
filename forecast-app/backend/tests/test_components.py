@@ -211,3 +211,15 @@ def test_c22_outward():
     drifted = np.concatenate([np.zeros(100), np.full(100, 0.5)])
     assert AD.page_hinkley(drifted)["drift"] and not AD.page_hinkley(flat)["drift"]
     assert AD.psi(rng.normal(0, 1, 300), rng.normal(3, 1, 300)) > 0.25
+
+
+# ---- P130: cross-page consistency (same engine → same numbers everywhere) ----
+def test_p130_cross_page_consistency():
+    import data, advanced
+    rows = data.fetch("MSFT")["rows"]
+    f1 = E.forecast_walkforward(rows, target=0.70)
+    f2 = E.forecast_walkforward(rows, target=0.70)
+    assert f1["coverage"] == f2["coverage"]                  # deterministic
+    # Forecast page coverage == Diagnostics page empirical (both from same rows)
+    emp = advanced.reliability(f1["rows"], 0.70)["empirical"]
+    assert abs(f1["coverage"] - emp) < 1e-6

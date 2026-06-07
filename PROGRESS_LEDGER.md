@@ -69,7 +69,7 @@ A = adjustment (only the global Scenario page exists; per-component ☐).*
 | 127 | Repository: 1,000-stock run page | ✅ | Repository page renders |
 | 128 | 1,000-stock batch (resumable) | ✅ | 1,080-stock batch |
 | 129 | End-to-end held-out validation (beat naive OOS) | ✅ | held-out: cov 70.4%, lift -30→-2.9% after naive-anchor fix |
-| 130 | Cross-page consistency | ☐ |  |
+| 130 | Cross-page consistency | ✅ | pytest cross-page determinism + Forecast≡Diagnostics |
 | 131 | Full regression `make verify` green | ✅ | 33 pytest + tsc + 14-page render gate green |
 | 132 | Final evidence report | ✅ | this report |
 

@@ -11,6 +11,8 @@ export default function Forecast() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [res, setRes] = useState<Record<string, any>>({});
   const [focus, setFocus] = useState("");
+  const [shift, setShift] = useState(0);
+  const [widen, setWiden] = useState(0);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -57,6 +59,29 @@ export default function Forecast() {
   const data = fr ? <table className="mini"><thead><tr><th>Date</th><th>Range</th><th>Actual</th><th>Hit</th></tr></thead>
     <tbody>{fr.rows.slice(-40).map((r: { date: string; lo: number; hi: number; actual: number; hit: boolean }) => (
       <tr key={r.date} className={r.hit ? "" : "miss"}><td>{r.date}</td><td>${r.lo}–${r.hi}</td><td>${r.actual}</td><td>{r.hit ? "✓" : "✗"}</td></tr>))}</tbody></table> : null;
-  const note = <div className="kv">Range = conformal + ACI (target {g.target}%) with debiasing; ensemble of 7 models. Pick stocks/target/granularity on the left.</div>;
-  return <PageArchetype title="Forecast" viz={viz} data={data} control={note} adjustment={note} />;
+  const note = <div className="kv">Range = conformal + ACI (target {g.target}%) with debiasing; point anchored on naive (held-out finding). Pick stocks/target/granularity on the left.</div>;
+
+  // interactive Adjustment: what-if shift/widen on the focus stock, before/after coverage
+  let adj = note;
+  if (fr) {
+    const s = shift / 100, w = 1 + widen / 100;
+    let hits = 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    fr.rows.forEach((r: any) => {
+      const pred = r.pred * (1 + s); const half = ((r.hi - r.lo) / 2) * w;
+      if (pred - half <= r.actual && r.actual <= pred + half) hits++;
+    });
+    const scov = +(hits / fr.rows.length * 100).toFixed(1);
+    adj = <div>
+      <div className="kv">What-if on <b>{focus}</b> — shift the forecast / widen the band, watch coverage move.</div>
+      <div className="kv">Drift shift: <b>{shift > 0 ? "+" : ""}{shift}%</b> <input type="range" min={-15} max={15} step={0.5} value={shift} onChange={(e) => setShift(Number(e.target.value))} /></div>
+      <div className="kv">Band widen: <b>{widen > 0 ? "+" : ""}{widen}%</b> <input type="range" min={-50} max={100} step={5} value={widen} onChange={(e) => setWiden(Number(e.target.value))} /></div>
+      <div className="cards">
+        <div className="card"><div className="cnum">{fr.coverage}%</div><div className="clab">baseline coverage</div></div>
+        <div className="card"><div className={`cnum ${scov >= fr.coverage ? "good" : "bad"}`}>{scov}%</div><div className="clab">scenario coverage</div></div>
+        <div className="card"><div className={`cnum ${scov - fr.coverage >= 0 ? "good" : "bad"}`}>{(scov - fr.coverage).toFixed(1)}pp</div><div className="clab">Δ</div></div>
+      </div>
+    </div>;
+  }
+  return <PageArchetype title="Forecast" viz={viz} data={data} control={note} adjustment={adj} />;
 }
