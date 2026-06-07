@@ -2,6 +2,8 @@ import { useState } from "react";
 import { GlobalProvider, useGlobal } from "./GlobalControls";
 import ControlPanel from "./ControlPanel";
 import PageArchetype from "./PageArchetype";
+import DataClean from "./DataClean";
+import Stationarity from "./Stationarity";
 import "./App.css";
 
 function StatsBar() {
@@ -19,6 +21,7 @@ function StatsBar() {
 // Top-tab structure. Component tabs fill in as each algorithm phase lands (Tier 1+).
 const GROUPS: { group: string; tabs: { id: string; label: string }[] }[] = [
   { group: "Pipeline", tabs: [{ id: "overview", label: "Overview" }] },
+  { group: "Data", tabs: [{ id: "clean", label: "Data clean" }, { id: "stationarity", label: "Stationarity" }] },
   { group: "Forecast", tabs: [] },
   { group: "Vectors", tabs: [] },
   { group: "Spatial", tabs: [] },
@@ -54,8 +57,11 @@ export default function App() {
               <PageArchetype title="Overview"
                 viz={<div className="kv">Foundation built &amp; gated (Tier 0). Algorithm components
                   (C1–C22) land here phase by phase — each with its own Visualization / Data /
-                  Control / Adjustment page, gated on real numbers + a screenshot.</div>} />
+                  Control / Adjustment page, gated on real numbers + a screenshot. Built so far:
+                  C1 Data clean, C2 Stationarity.</div>} />
             )}
+            {view === "clean" && <DataClean />}
+            {view === "stationarity" && <Stationarity />}
           </main>
         </div>
       </div>

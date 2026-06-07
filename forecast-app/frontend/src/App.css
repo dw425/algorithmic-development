@@ -43,4 +43,9 @@ body { margin: 0; background: #0f1117; color: #e8eaf0;
   padding: 8px 12px; font-weight: 600; cursor: pointer; }
 .subtabs button.on { color: #fff; border-bottom-color: #3b82f6; }
 .kv { color: #c8cee0; font-size: 14px; line-height: 1.6; }
+table.mini { border-collapse: collapse; font-size: 13px; background: #151823; border-radius: 8px; overflow: hidden; }
+table.mini th, table.mini td { padding: 6px 12px; text-align: left; border-bottom: 1px solid #20242f; }
+table.mini th { background: #1c2030; color: #9aa3ba; font-size: 11px; text-transform: uppercase; }
+tr.miss { background: #1e1518; }
+input[type=range] { width: 220px; }
 .err { background: #3a1518; color: #f87171; padding: 12px; border-radius: 8px; }
