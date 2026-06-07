@@ -17,6 +17,7 @@ import { Predictions, MultiHorizon, Backtest, TPA } from "./pages/ForecastPages"
 import { VectorCloud, Cluster3D, FunnelView, ConstellationView, DependencyMap } from "./pages/Geometry";
 import { Predictability, Calibration, MCS, Drift } from "./pages/DiagnosticsPages";
 import { Compare, Repository } from "./pages/UniverseExtra";
+import EtlEmbed from "./pages/EtlEmbed";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -48,6 +49,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/universe/compare" element={<Compare />} />
             <Route path="/universe/repository" element={<Repository />} />
             <Route path="/flow" element={<Platform />} />
+            <Route path="/etl" element={<EtlEmbed />} />
             <Route path="/diagnostics/predictability" element={<Predictability />} />
             <Route path="/diagnostics/calibration" element={<Calibration />} />
             <Route path="/diagnostics/mcs" element={<MCS />} />

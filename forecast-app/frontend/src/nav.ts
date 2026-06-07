@@ -1,6 +1,6 @@
 // Single source of truth for the DataForge information architecture: seven top-level tabs, each
 // with a set of sub-views (the visualizers). Consumed by both Layout (chrome) and the router.
-export type Accent = "data" | "models" | "forecast" | "geometry" | "universe" | "flow" | "diagnostics";
+export type Accent = "data" | "models" | "forecast" | "geometry" | "universe" | "flow" | "diagnostics" | "etl";
 export interface NavView { path: string; label: string; }
 export interface NavTab { id: string; label: string; accent: Accent; views: NavView[]; }
 
@@ -55,6 +55,10 @@ export const TABS: NavTab[] = [
   {
     id: "flow", label: "Flow Builder", accent: "flow",
     views: [{ path: "/flow", label: "Canvas" }],
+  },
+  {
+    id: "etl", label: "ETL Dep-Viz", accent: "etl",
+    views: [{ path: "/etl", label: "Dependency Visualizer" }],
   },
   {
     id: "diagnostics", label: "Diagnostics", accent: "diagnostics",

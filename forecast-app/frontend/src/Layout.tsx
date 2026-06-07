@@ -8,12 +8,12 @@ import { useGlobal } from "./GlobalControls";
 const BORDER: Record<Accent, string> = {
   data: "border-tab-data", models: "border-tab-models", forecast: "border-tab-forecast",
   geometry: "border-tab-geometry", universe: "border-tab-universe", flow: "border-tab-flow",
-  diagnostics: "border-tab-diagnostics",
+  diagnostics: "border-tab-diagnostics", etl: "border-tab-etl",
 };
 const TEXT: Record<Accent, string> = {
   data: "text-tab-data", models: "text-tab-models", forecast: "text-tab-forecast",
   geometry: "text-tab-geometry", universe: "text-tab-universe", flow: "text-tab-flow",
-  diagnostics: "text-tab-diagnostics",
+  diagnostics: "text-tab-diagnostics", etl: "text-tab-etl",
 };
 
 function Mark({ className = "" }: { className?: string }) {

@@ -23,6 +23,7 @@ export default {
           universe: "hsl(var(--tab-universe))",
           flow: "hsl(var(--tab-flow))",
           diagnostics: "hsl(var(--tab-diagnostics))",
+          etl: "hsl(var(--tab-etl))",
         },
       },
       borderRadius: { lg: "var(--radius)", md: "calc(var(--radius) - 2px)", sm: "calc(var(--radius) - 4px)" },
