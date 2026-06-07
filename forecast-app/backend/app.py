@@ -24,8 +24,24 @@ import platform_nodes
 import flow as flowmod
 from fastapi import Request
 
-app = FastAPI(title="Algorithmic Forecasting")
+app = FastAPI(title="DataForge unified platform")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+# ---- Integrated etl-dep-viz (Pipeline Analyzer): same process, same API, under /etl/api ----
+# Not a separate service and not an iframe — its 11 routers are included directly into THIS app.
+try:
+    from etlviz.models.database import init_db as _etl_init_db
+    _etl_init_db()
+    for _r in ["tier_map", "vectors", "layers", "active_tags", "users", "lineage",
+               "exports", "chat", "views", "projects", "compare"]:
+        try:
+            _mod = __import__(f"etlviz.routers.{_r}", fromlist=["router"])
+            app.include_router(_mod.router, prefix="/etl/api")
+        except Exception as _e:  # noqa - optional-dep routers (chat/vectors AI) skip cleanly
+            print(f"[etlviz] router '{_r}' skipped: {str(_e)[:120]}")
+    print("[etlviz] integrated under /etl/api (single process)")
+except Exception as _e:  # noqa
+    print(f"[etlviz] integration unavailable: {str(_e)[:160]}")
 
 
 @app.get("/health")

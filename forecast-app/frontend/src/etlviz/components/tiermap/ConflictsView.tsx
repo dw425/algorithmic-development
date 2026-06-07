@@ -1,0 +1,322 @@
+/**
+ * ConflictsView.tsx -- Two sections: Write-Write Conflicts (tables with >1
+ * writer) and Read-After-Write Chains (tables where readers depend on
+ * writers).
+ */
+
+import React, { useState, useMemo } from 'react';
+import type { TierMapResult } from '../../types/tiermap';
+import {
+  C,
+  buildSessionData,
+  deriveWriteConflicts,
+  deriveReadAfterWrite,
+} from './constants';
+import TierFilterSidebar, { type TierFilters, getDefaultTierFilters, applyTierFilters } from '../shared/TierFilterSidebar';
+import SessionSearchBar from '../shared/SessionSearchBar';
+
+/** Number of items per "page" for progressive loading of conflict/chain lists */
+const PAGE_SIZE = 100;
+
+interface Props {
+  /** Full tier map result containing sessions, tables, and connections */
+  data: TierMapResult;
+  onSessionSelect?: (sessionId: string) => void;
+}
+
+/**
+ * ConflictsView displays two categories of data quality issues:
+ * 1. Write-Write Conflicts -- tables targeted by multiple sessions (potential race conditions)
+ * 2. Read-After-Write Chains -- tables where readers depend on writer output (ordering constraints)
+ *
+ * Both sections use progressive "show more" pagination to avoid rendering thousands of DOM nodes.
+ */
+const ConflictsView: React.FC<Props> = ({ data, onSessionSelect }) => {
+  const [tierFilters, setTierFilters] = useState<TierFilters>(getDefaultTierFilters);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // ── Derived data pipeline ──────────────────────────────────────────────────
+  // Each step memoizes its result and only recomputes when its direct dependency changes.
+  const filteredData = useMemo(() => applyTierFilters(data, tierFilters), [data, tierFilters]);
+  const sessionData = useMemo(() => buildSessionData(filteredData), [filteredData]);
+  const writeConflicts = useMemo(() => deriveWriteConflicts(sessionData), [sessionData]);
+  const readAfterWrite = useMemo(() => deriveReadAfterWrite(sessionData), [sessionData]);
+
+  /** Table -> writers[] entries for write-write conflicts */
+  const conflictEntries = useMemo(() => {
+    const entries = Object.entries(writeConflicts);
+    if (!searchTerm) return entries;
+    return entries.filter(([table, writers]) =>
+      table.toLowerCase().includes(searchTerm) || writers.some(w => w.toLowerCase().includes(searchTerm))
+    );
+  }, [writeConflicts, searchTerm]);
+  /** Table -> {writers[], readers[]} entries for read-after-write chains */
+  const rawEntries = useMemo(() => {
+    const entries = Object.entries(readAfterWrite);
+    if (!searchTerm) return entries;
+    return entries.filter(([table, info]) =>
+      table.toLowerCase().includes(searchTerm) ||
+      info.writers.some((w: string) => w.toLowerCase().includes(searchTerm)) ||
+      info.readers.some((r: string) => r.toLowerCase().includes(searchTerm))
+    );
+  }, [readAfterWrite, searchTerm]);
+
+  // ── Progressive pagination ──────────────────────────────────────────────────
+  // Starts at page 1; each "show more" click increments by 1, revealing PAGE_SIZE more items.
+  const [conflictPage, setConflictPage] = useState(1);
+  const [chainPage, setChainPage] = useState(1);
+  const visibleConflicts = conflictEntries.slice(0, conflictPage * PAGE_SIZE);
+  const visibleChains = rawEntries.slice(0, chainPage * PAGE_SIZE);
+
+  return (
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+    <div style={{ overflowY: 'auto', flex: 1 }}>
+      <SessionSearchBar
+        placeholder="Search tables or sessions..."
+        onSearch={setSearchTerm}
+        matchCount={searchTerm ? conflictEntries.length + rawEntries.length : undefined}
+      />
+      {/* ── Write-Write Conflicts ──────────────────────────────────────────── */}
+      <div style={{ marginBottom: 24 }}>
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 700,
+            color: C.conflict,
+            marginBottom: 4,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <span style={{ fontSize: 16 }}>{'\u26A0'}</span>
+          Write-Write Conflicts ({conflictEntries.length})
+        </div>
+        <div style={{ fontSize: 10, color: C.textDim, marginBottom: 12 }}>
+          Multiple sessions writing to the same target &mdash; validation depends on execution
+          order
+        </div>
+
+        {conflictEntries.length === 0 && (
+          <div
+            style={{
+              fontSize: 11,
+              color: C.textDim,
+              padding: 16,
+              background: C.surface,
+              borderRadius: 8,
+              border: '1px solid ' + C.border,
+              textAlign: 'center' as const,
+            }}
+          >
+            No write-write conflicts detected
+          </div>
+        )}
+
+        {visibleConflicts.map(([table, writers]) => (
+          <div
+            key={table}
+            style={{
+              background: 'rgba(239,68,68,0.08)',
+              border: '1px solid rgba(239,68,68,0.2)',
+              borderRadius: 8,
+              padding: 14,
+              marginBottom: 10,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: 'monospace',
+                fontSize: 12,
+                fontWeight: 700,
+                color: C.write,
+                marginBottom: 8,
+              }}
+            >
+              {table}
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+              {writers.map(s => (
+                <span
+                  key={s}
+                  style={{
+                    fontSize: 10,
+                    padding: '4px 10px',
+                    borderRadius: 5,
+                    background: C.surface,
+                    color: C.text,
+                    border: '1px solid ' + C.border,
+                  }}
+                >
+                  {sessionData[s]?.short || s}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+        {visibleConflicts.length < conflictEntries.length && (
+          <button
+            onClick={() => setConflictPage(p => p + 1)}
+            style={{
+              fontSize: 11, padding: '8px 16px', borderRadius: 6, border: '1px solid ' + C.border,
+              background: C.surface, color: C.text, cursor: 'pointer', width: '100%', marginTop: 4,
+            }}
+          >
+            Show more ({conflictEntries.length - visibleConflicts.length} remaining)
+          </button>
+        )}
+      </div>
+
+      {/* ── Read-After-Write Chains ────────────────────────────────────────── */}
+      <div style={{ marginBottom: 24 }}>
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 700,
+            color: C.chain,
+            marginBottom: 4,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <span style={{ fontSize: 16 }}>{'\u26D3'}</span>
+          Read-After-Write Chains ({rawEntries.length})
+        </div>
+        <div style={{ fontSize: 10, color: C.textDim, marginBottom: 12 }}>
+          Reader MUST run after writer
+        </div>
+
+        {rawEntries.length === 0 && (
+          <div
+            style={{
+              fontSize: 11,
+              color: C.textDim,
+              padding: 16,
+              background: C.surface,
+              borderRadius: 8,
+              border: '1px solid ' + C.border,
+              textAlign: 'center' as const,
+            }}
+          >
+            No read-after-write chains detected
+          </div>
+        )}
+
+        {visibleChains.map(([table, { writers, readers }]) => (
+          <div
+            key={table}
+            style={{
+              background: 'rgba(168,85,247,0.06)',
+              border: '1px solid rgba(168,85,247,0.2)',
+              borderRadius: 8,
+              padding: 14,
+              marginBottom: 10,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: 'monospace',
+                fontSize: 12,
+                fontWeight: 700,
+                color: C.chain,
+                marginBottom: 10,
+              }}
+            >
+              {table}
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                flexWrap: 'wrap' as const,
+              }}
+            >
+              {/* Writers */}
+              <div>
+                <div
+                  style={{
+                    fontSize: 8,
+                    color: C.textDim,
+                    textTransform: 'uppercase' as const,
+                    marginBottom: 4,
+                  }}
+                >
+                  Writers
+                </div>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
+                  {writers.map(x => (
+                    <span
+                      key={x}
+                      style={{
+                        fontSize: 10,
+                        padding: '3px 8px',
+                        borderRadius: 4,
+                        background: 'rgba(239,68,68,0.1)',
+                        color: C.write,
+                        fontFamily: 'monospace',
+                      }}
+                    >
+                      {sessionData[x]?.short || x}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <div style={{ fontSize: 18, color: C.chain }}>{'\u2192'}</div>
+
+              {/* Readers */}
+              <div>
+                <div
+                  style={{
+                    fontSize: 8,
+                    color: C.textDim,
+                    textTransform: 'uppercase' as const,
+                    marginBottom: 4,
+                  }}
+                >
+                  Readers
+                </div>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
+                  {readers.map(x => (
+                    <span
+                      key={x}
+                      style={{
+                        fontSize: 10,
+                        padding: '3px 8px',
+                        borderRadius: 4,
+                        background: 'rgba(34,197,94,0.1)',
+                        color: C.read,
+                        fontFamily: 'monospace',
+                      }}
+                    >
+                      {sessionData[x]?.short || x}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+        {visibleChains.length < rawEntries.length && (
+          <button
+            onClick={() => setChainPage(p => p + 1)}
+            style={{
+              fontSize: 11, padding: '8px 16px', borderRadius: 6, border: '1px solid ' + C.border,
+              background: C.surface, color: C.text, cursor: 'pointer', width: '100%', marginTop: 4,
+            }}
+          >
+            Show more ({rawEntries.length - visibleChains.length} remaining)
+          </button>
+        )}
+      </div>
+    </div>
+    <TierFilterSidebar data={data} filters={tierFilters} onChange={setTierFilters} compact />
+    </div>
+  );
+};
+
+export default ConflictsView;

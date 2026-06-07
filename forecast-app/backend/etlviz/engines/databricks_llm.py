@@ -1,0 +1,95 @@
+"""Databricks Foundation Model LLM client.
+
+Calls Databricks serving endpoints for LLM inference using the workspace's
+OAuth token (service principal). No external API keys required.
+
+Usage:
+    client = DatabricksLLM(model="databricks-meta-llama-3-3-70b-instruct")
+    response = await client.generate(system_prompt, messages)
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+import urllib.error
+import urllib.request
+
+from etlviz.engines.databricks_auth import get_databricks_token
+
+logger = logging.getLogger("edv.databricks_llm")
+
+
+class DatabricksLLM:
+    """Databricks Foundation Model serving endpoint client.
+
+    Tracks token usage (input/output) for cost monitoring.
+    """
+
+    # Class-level token usage counters (persists across instances within process)
+    _total_tokens_in: int = 0
+    _total_tokens_out: int = 0
+    _total_calls: int = 0
+
+    def __init__(self, model: str = "databricks-meta-llama-3-3-70b-instruct"):
+        self.model = model
+
+    @classmethod
+    def get_usage_stats(cls) -> dict:
+        """Return cumulative token usage stats."""
+        return {
+            "total_tokens_in": cls._total_tokens_in,
+            "total_tokens_out": cls._total_tokens_out,
+            "total_calls": cls._total_calls,
+        }
+
+    def _call_endpoint(self, system_prompt: str, messages: list[dict], max_tokens: int) -> str:
+        """Synchronous call to the Databricks Foundation Model endpoint."""
+        host, token = get_databricks_token()
+        url = f"{host}/serving-endpoints/{self.model}/invocations"
+
+        all_messages = [{"role": "system", "content": system_prompt}] + messages
+        payload = json.dumps({
+            "messages": all_messages,
+            "max_tokens": max_tokens,
+        }).encode()
+
+        req = urllib.request.Request(
+            url, data=payload, method="POST",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {token}",
+            },
+        )
+
+        try:
+            resp = urllib.request.urlopen(req, timeout=30)
+            result = json.loads(resp.read())
+            # Track token usage
+            usage = result.get("usage", {})
+            DatabricksLLM._total_tokens_in += usage.get("prompt_tokens", 0)
+            DatabricksLLM._total_tokens_out += usage.get("completion_tokens", 0)
+            DatabricksLLM._total_calls += 1
+            return result["choices"][0]["message"]["content"]
+        except urllib.error.HTTPError as exc:
+            logger.error("Databricks LLM call failed: %s (url=%s, model=%s)", exc, url, self.model)
+            if exc.code == 404:
+                raise RuntimeError(
+                    f"Databricks LLM call failed: HTTP Error 404: Not Found. "
+                    f"Check your serving endpoint configuration. "
+                    f"Model '{self.model}' may not exist at {host}. "
+                    f"Set EDV_DATABRICKS_LLM_MODEL env var to an available endpoint."
+                ) from exc
+            raise RuntimeError(f"Databricks LLM call failed: {exc}") from exc
+        except Exception as exc:
+            logger.error("Databricks LLM call failed: %s", exc)
+            raise RuntimeError(f"Databricks LLM call failed: {exc}") from exc
+
+    async def generate(self, system_prompt: str, messages: list[dict], max_tokens: int = 2048) -> str:
+        """Call the Databricks Foundation Model endpoint asynchronously.
+
+        Wraps the blocking HTTP call in asyncio.to_thread to avoid
+        blocking the event loop.
+        """
+        return await asyncio.to_thread(self._call_endpoint, system_prompt, messages, max_tokens)
