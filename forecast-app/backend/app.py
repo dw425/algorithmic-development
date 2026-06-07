@@ -169,6 +169,28 @@ def engine_param_win():
     return 60
 
 
+@app.post("/api/datasets/{sid}/automl")
+def api_automl(sid: str, target: str = "", test_size: float = 0.2, ordered: bool = False):
+    """AutoML leaderboard — run a curated model set on the dataset and rank."""
+    df = ingest.load(sid)
+    if df is None:
+        return {"error": "not found"}
+    tgt = target or ingest.profile(df)["target_candidate"]
+    res = modellab.leaderboard(df, tgt, test_size=test_size, ordered=ordered)
+    return {"id": sid, "target": tgt, "leaderboard": res["leaderboard"],
+            "best_model": res["best_model"], "n_models": res["n_models"]}
+
+
+@app.post("/api/datasets/{sid}/importance")
+def api_importance(sid: str, model: str = "random_forest", target: str = ""):
+    """Permutation feature importance for a model on the dataset."""
+    df = ingest.load(sid)
+    if df is None:
+        return {"error": "not found"}
+    tgt = target or ingest.profile(df)["target_candidate"]
+    return {"id": sid, **modellab.importance(df, model, tgt)}
+
+
 @app.post("/api/datasets/{sid}/model")
 def api_model_run(sid: str, model: str, target: str, test_size: float = 0.2, ordered: bool = True):
     """Stage 5 — fit a Zoo model on the dataset and score it."""

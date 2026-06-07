@@ -64,6 +64,7 @@ export const getTPA = (t: string, iv = "1d", p?: Partial<Params>) => { const q =
 export const getDiagnostics = (t: string, target = 0.7, iv = "1d") => get(`/api/diagnostics?ticker=${t}&target=${target}&interval=${iv}`);
 export const getPredict = (t: string, target = 0.7, iv = "1d", p?: Partial<Params>) => { const q = P(p); return get(`/api/predict?ticker=${t}&target=${target}&interval=${iv}&win=${q.fcWin}&recent=${q.fcRecent}&debias=${q.debias}`); };
 export const getPredictionsAll = () => get(`/api/predictions_all`);
+export const getRuns = () => get(`/api/runs`);
 export const getBacktest = (t: string, dates: string, horizons = "1,7,30,90", target = 0.7, iv = "1d") =>
   get(`/api/backtest?ticker=${t}&dates=${dates}&horizons=${horizons}&target=${target}&interval=${iv}`);
 
@@ -91,6 +92,8 @@ export const forecastDataset = (sid: string, target: string, time = "", coverage
 // ---- Node platform ----
 export const getNodes = () => get(`/api/nodes`);
 export const getRows = (sid: string, limit = 2000) => get(`/api/datasets/${sid}/rows?limit=${limit}`);
+export const automlDataset = (sid: string, target = "") => post(`/api/datasets/${sid}/automl?target=${target}`);
+export const importanceDataset = (sid: string, model: string, target = "") => post(`/api/datasets/${sid}/importance?model=${model}&target=${target}`);
 export async function runFlow(graph: unknown) {
   const r = await fetch(`${BASE}/api/flow/run`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(graph) });
   if (!r.ok) throw new Error(`flow run failed: ${r.status}`);
