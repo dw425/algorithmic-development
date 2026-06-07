@@ -42,3 +42,5 @@ export const getModels = (t: string, iv = "1d") => get(`/api/models?ticker=${t}&
 export const getForecast = (t: string, target = 0.7, iv = "1d") => get(`/api/forecast?ticker=${t}&target=${target}&interval=${iv}`);
 export const getHorizons = (t: string, target = 0.7, iv = "1d") => get(`/api/horizons?ticker=${t}&target=${target}&interval=${iv}`);
 export const getCloud = (t: string, iv = "1d") => get(`/api/cloud?ticker=${t}&interval=${iv}`);
+export const getGeo = (t: string, iv = "1d") => get(`/api/geoconsensus?ticker=${t}&interval=${iv}`);
+export const getLouvain = (tickers: string[]) => get(`/api/louvain?tickers=${tickers.join(",")}`);

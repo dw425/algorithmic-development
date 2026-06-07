@@ -123,3 +123,43 @@ def test_c10_grid():
     assert E.N_VECTORS == 11 * 12 * 5 * 3
     cloud = E.build_cloud(np.array([x["close"] for x in data.fetch("MSFT")["rows"]])[:300])
     assert len(cloud) > 100 and np.isfinite(cloud).all()
+
+
+# ---- C11-C16: spatial ----
+import spatial as SP  # noqa
+
+
+def _px():
+    import data
+    return np.array([x["close"] for x in data.fetch("MSFT")["rows"]], float)
+
+
+def test_c11_standardize():
+    v, r, dr = SP.geo_cloud(_px()[:300])
+    Xs = SP.standardize(v, r, dr)
+    assert np.all(np.abs(Xs.mean(0)) < 1e-6) and np.isfinite(Xs).all()
+
+
+def test_c12_15_geo_consensus():
+    g = SP.geo_consensus(_px()[:300])
+    assert np.isfinite(g["forecast"])
+    assert 0 <= g["consensus_pct"] <= 100
+    assert 0 <= g["mahalanobis_pct"] <= 100
+    assert g["constellation_len"] > 0 and g["davies_bouldin"] >= 0
+
+
+def test_c14_mahalanobis_gaussian():
+    # 3D Gaussian: MD^2 ~ chi2(3) -> P(MD<1)=P(chi2_3<1)~=0.20 (NOT the 1D 68%)
+    X = rng.normal(0, 1, (4000, 3))
+    inv = np.linalg.pinv(np.cov(X.T)); cen = X.mean(0)
+    md = np.sqrt(np.einsum("ij,jk,ik->i", X - cen, inv, X - cen))
+    assert 0.12 < np.mean(md < 1.0) < 0.30   # chi2_3 CDF at 1 ~= 0.199
+
+
+def test_c16_louvain_symmetric():
+    m = SP.louvain_map(["AAPL", "MSFT", "NVDA", "JNJ", "JPM"])
+    assert m["n_communities"] >= 1
+    dm = np.array(m["dep_matrix"])
+    assert np.allclose(dm, dm.T)   # dependency matrix symmetric
+    for e in m["edges"]:
+        assert e["weight"] >= 0

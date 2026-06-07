@@ -46,12 +46,12 @@ A = adjustment (only the global Scenario page exists; per-component ☐).*
 | C8 | Debiasing (Mincer–Zarnowitz) | 48–52 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
 | C9 | Multi-horizon (7/30/90, purge/embargo) | 53–57 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
 | C10 | Vector grid (1,980) | 58–62 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
-| C11 | 3D embed + standardize | 63–67 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c11; Walkthrough 3D |
-| C12 | Clustering (KMeans/DBSCAN/GMM) | 68–72 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c12_15; Walkthrough |
-| C13 | Consensus clustering | 73–77 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c12_15; Walkthrough |
-| C14 | Mahalanobis concentration | 78–82 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c12_15 |
-| C15 | Constellation MST + Davies–Bouldin | 83–87 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c12_15; Constellation (D3 canvas) |
-| C16 | Louvain data-gravity + dependency | 88–92 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c16; Dependency mapper |
+| C11 | 3D embed + standardize | 63–67 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
+| C12 | Clustering (KMeans/DBSCAN/GMM) | 68–72 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
+| C13 | Consensus clustering | 73–77 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
+| C14 | Mahalanobis concentration | 78–82 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
+| C15 | Constellation MST + Davies–Bouldin | 83–87 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
+| C16 | Louvain data-gravity + dependency | 88–92 | ✅ | ✅ | ✅ | 🔨 | 🔨 | math-gated + page render |
 | C17 | Inverse-drift + Net results | 93–97 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c17 |
 | C18 | Funnel + Wave refinement (stability) | 98–102 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c18 (monotonic); Funnel page |
 | C19 | Model Confidence Set (royal rumble) | 103–107 | ☐ | ☐ | ☐ | ☐ | ☐ | test_c19 (dominant survives) |

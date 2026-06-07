@@ -10,6 +10,8 @@ const TABS = [
   ["Forecast", "Forecast"],
   ["Multi-horizon", "Multi-horizon"],
   ["Vector grid", "Vector grid"],
+  ["Cluster consensus", "Cluster consensus"],
+  ["Dependency mapper", "Dependency mapper"],
 ];
 const b = await chromium.launch();
 const p = await b.newPage();

@@ -8,6 +8,7 @@ import numpy as np
 import data
 import prep
 import engine
+import spatial
 
 app = FastAPI(title="Algorithmic Forecasting")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -108,3 +109,20 @@ def api_cloud(ticker: str, interval: str = "1d"):
     return {"ticker": ticker, "n_vectors": engine.N_VECTORS, "n_used": int(len(cloud)),
             "hist_counts": [int(x) for x in counts], "hist_edges": [round(float(x), 2) for x in edges],
             "last": round(float(p[-1]), 2)}
+
+
+@app.get("/api/geoconsensus")
+def api_geo(ticker: str, interval: str = "1d"):
+    """C11-C15 — 3D embed → clustering → consensus → Mahalanobis → constellation."""
+    rows = data.fetch(ticker, interval=interval)["rows"]
+    p = np.array([r["close"] for r in rows], float)
+    out = spatial.geo_consensus(p[:300] if len(p) > 300 else p)
+    out["ticker"] = ticker
+    return out
+
+
+@app.get("/api/louvain")
+def api_louvain(tickers: str):
+    """C16 — Louvain data-gravity communities + cluster-to-cluster dependency."""
+    tk = [t.strip().upper() for t in tickers.split(",") if t.strip()][:50]
+    return spatial.louvain_map(tk)

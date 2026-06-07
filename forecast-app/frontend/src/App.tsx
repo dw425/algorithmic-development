@@ -10,6 +10,8 @@ import BaseModels from "./BaseModels";
 import Forecast from "./Forecast";
 import MultiHorizon from "./MultiHorizon";
 import VectorGrid from "./VectorGrid";
+import ClusterConsensus from "./ClusterConsensus";
+import Dependency from "./Dependency";
 import "./App.css";
 
 function StatsBar() {
@@ -30,7 +32,7 @@ const GROUPS: { group: string; tabs: { id: string; label: string }[] }[] = [
   { group: "Data", tabs: [{ id: "clean", label: "Data clean" }, { id: "stationarity", label: "Stationarity" }, { id: "multiscale", label: "Multi-scale" }] },
   { group: "Forecast", tabs: [{ id: "forecast", label: "Forecast" }, { id: "horizons", label: "Multi-horizon" }, { id: "predictability", label: "Predictability" }, { id: "models", label: "Base models" }] },
   { group: "Vectors", tabs: [{ id: "vectorgrid", label: "Vector grid" }] },
-  { group: "Spatial", tabs: [] },
+  { group: "Spatial", tabs: [{ id: "cluster", label: "Cluster consensus" }, { id: "dependency", label: "Dependency mapper" }] },
   { group: "Experiments", tabs: [] },
 ];
 
@@ -74,6 +76,8 @@ export default function App() {
             {view === "forecast" && <Forecast />}
             {view === "horizons" && <MultiHorizon />}
             {view === "vectorgrid" && <VectorGrid />}
+            {view === "cluster" && <ClusterConsensus />}
+            {view === "dependency" && <Dependency />}
           </main>
         </div>
       </div>
