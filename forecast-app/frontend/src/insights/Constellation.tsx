@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
 import { api, TIER_COLOR, MODEL_COLOR, CHUNK_PALETTE, heat, type Node, type Tier, type AlgoInfo, type ClusterChunk } from "./api";
 
-type Layout = "umap" | "pca" | "category" | "tier";
+type Layout = "umap" | "pca" | "category" | "tier" | "cluster";
 type SizeBy = "uniform" | "quality" | "length";
 const TIERS: Tier[] = ["small", "medium", "large"];
 const LOD_FAR = 0.8, HULL_ALPHA = 0.09, DOT_R = 2.4, MAX_NODES = 26000;
@@ -18,8 +18,8 @@ export default function Constellation({ onSelect }: { onSelect: (promptI: number
   const [meta, setMeta] = useState<{ total: number; returned: number; sampled: boolean }>({ total: 0, returned: 0, sampled: false });
   const [cats, setCats] = useState<string[]>([]);
   const [algos, setAlgos] = useState<AlgoInfo[]>([]);
-  const [layout, setLayout] = useState<Layout>("umap");
-  const [colorBy, setColorBy] = useState<string>("category");
+  const [layout, setLayout] = useState<Layout>("cluster");
+  const [colorBy, setColorBy] = useState<string>("louvain");
   const [sizeBy, setSizeBy] = useState<SizeBy>("uniform");
   const [hulls, setHulls] = useState(true);
   const [edgesOn, setEdgesOn] = useState(true);
@@ -65,9 +65,23 @@ export default function Constellation({ onSelect }: { onSelect: (promptI: number
     } else if (layout === "tier") {
       const bi: Record<Tier, number> = { small: 0, medium: 1, large: 2 };
       nodes.forEach(n => m.set(n.id, [0.04 + n.x * 0.92, 0.12 + bi[n.tier] * 0.3 + n.y * 0.18]));
+    } else if (layout === "cluster") {
+      // arrange each group/cluster as its own spatial blob in a ring → switching algorithm reorganizes the map
+      const keyOf = (n: Node): string | null =>
+        colorBy === "tier" ? n.tier : colorBy === "model" ? n.model : colorBy === "category" ? n.category
+          : (isAlgo && n.cluster != null && n.cluster !== -1) ? `c${n.cluster}` : null;
+      const keys = [...new Set(nodes.map(keyOf).filter((k): k is string => !!k))];
+      const ang = new Map(keys.map((k, i) => [k, (2 * Math.PI * i) / Math.max(1, keys.length)]));
+      const R = keys.length > 1 ? 0.37 : 0;
+      nodes.forEach(n => {
+        const k = keyOf(n);
+        if (!k || !ang.has(k)) { m.set(n.id, [0.5 + (n.x - 0.5) * 0.1, 0.5 + (n.y - 0.5) * 0.1]); return; }
+        const a = ang.get(k)!, cx = 0.5 + R * Math.cos(a), cy = 0.5 + R * Math.sin(a);
+        m.set(n.id, [cx + (n.x - 0.5) * 0.17, cy + (n.y - 0.5) * 0.17]);
+      });
     } else nodes.forEach(n => m.set(n.id, [n.x, n.y]));
     return m;
-  }, [nodes, layout, cats]);
+  }, [nodes, layout, cats, colorBy, isAlgo]);
 
   const visible = useMemo(() => nodes.filter(n => tiers.has(n.tier) && (cat === "all" || n.category === cat)), [nodes, tiers, cat]);
 
@@ -192,11 +206,11 @@ export default function Constellation({ onSelect }: { onSelect: (promptI: number
           {meta.returned.toLocaleString()}{meta.sampled ? ` of ${meta.total.toLocaleString()} (sampled — zoom in for detail)` : " answers"} · {groups.length ? `${groups.length} clusters` : "gradient"} · click a star</div>
       </div>
       <div className="ih-encode">
-        <h3>Layout</h3>{Seg(layout, v => setLayout(v as Layout), [["umap", "UMAP"], ["pca", "PCA"], ["category", "By category"], ["tier", "Tier bands"]])}
+        <h3>Layout</h3>{Seg(layout, v => setLayout(v as Layout), [["cluster", "Clusters"], ["umap", "UMAP"], ["pca", "PCA"], ["category", "By cat"], ["tier", "Tiers"]])}
         <h3>Color / cluster by</h3>
-        <div className="ih-seg">{["tier", "model", "category", "quality"].map(v => <button key={v} className={colorBy === v ? "on" : ""} onClick={() => setColorBy(v)}>{v}</button>)}</div>
-        <div style={{ fontSize: 11, color: "#9aa0b4", margin: "8px 0 5px" }}>clustering algorithms</div>
-        <div className="ih-seg">{algos.filter(a => a.computed).map(a => <button key={a.id} className={colorBy === a.id ? "on" : ""} onClick={() => setColorBy(a.id)} title={a.name}>{a.id}</button>)}</div>
+        <div className="ih-seg">{["tier", "model", "category", "quality"].map(v => <button key={v} className={colorBy === v ? "on" : ""} onClick={() => { setColorBy(v); if (v !== "quality") setLayout("cluster"); }}>{v}</button>)}</div>
+        <div style={{ fontSize: 11, color: "var(--dim)", margin: "8px 0 5px" }}>clustering algorithms (re-layouts the map)</div>
+        <div className="ih-seg">{algos.filter(a => a.computed).map(a => <button key={a.id} className={colorBy === a.id ? "on" : ""} onClick={() => { setColorBy(a.id); setLayout("cluster"); }} title={a.name}>{a.id}</button>)}</div>
         {isAlgo && chunks && <div className="ih-muted" style={{ fontSize: 11, marginTop: 7 }}>
           {algos.find(a => a.id === colorBy)?.name} · {chunks.size} clusters · avg cohesion {([...chunks.values()].reduce((s, x) => s + x.cohesion, 0) / Math.max(1, chunks.size)).toFixed(2)}</div>}
         <h3>Size by</h3>{Seg(sizeBy, v => setSizeBy(v as SizeBy), [["uniform", "Uniform"], ["quality", "Quality"], ["length", "Length"]])}
