@@ -10,9 +10,12 @@ import Categories from "./tabs/Categories";
 import Models from "./tabs/Models";
 import DivergenceLab from "./tabs/DivergenceLab";
 import QualityLab from "./tabs/QualityLab";
+import AlgorithmLab from "./tabs/AlgorithmLab";
+import SearchExplorer from "./tabs/SearchExplorer";
 
 const TABS = [
-  ["overview", "◆", "Overview"], ["constellation", "✦", "Constellation"], ["prompts", "▤", "Prompt Explorer"],
+  ["overview", "◆", "Overview"], ["constellation", "✦", "Constellation"], ["algorithms", "⎔", "Algorithm Lab"],
+  ["search", "⌕", "Search"], ["prompts", "▤", "Prompt Explorer"],
   ["tiers", "▣", "Tiers"], ["categories", "◫", "Categories"], ["models", "◉", "Models"],
   ["divergence", "⟜", "Divergence Lab"], ["quality", "★", "Quality Lab"], ["vectoring", "✺", "Vectoring"],
 ] as const;
@@ -38,6 +41,8 @@ export default function InsightsApp() {
         {tab === "constellation" && <><div className="ih-h1">Constellation</div>
           <div className="ih-sub">Every answer is a star. Bind any metric to layout · color · size · filter — same map, infinite readings. Click a star → its prompt.</div>
           <Constellation onSelect={open} /></>}
+        {tab === "algorithms" && <AlgorithmLab onOpen={open} />}
+        {tab === "search" && <SearchExplorer onOpen={open} />}
         {tab === "prompts" && <PromptExplorer onOpen={open} />}
         {tab === "tiers" && <Tiers />}
         {tab === "categories" && <Categories onOpen={open} />}

@@ -184,6 +184,56 @@ def algorithms():
     return {"algorithms": [a for a in ALGORITHMS if not a["computed"] or a["id"] in have]}
 
 
+@router.get("/search")
+def search(q: str = "", scope: str = Query("both", pattern="^(prompt|answer|both)$"),
+           tier: str = "", category: str = "", min_quality: float = 0.0,
+           page: int = 0, size: int = 50):
+    """Full-text search over prompts AND/OR answers, with filters + pagination (scales via LIMIT/OFFSET;
+    swap LIKE for an FTS5 virtual table at 100K)."""
+    con = _con()
+    where = ["1=1"]; args: list = []
+    if q and scope in ("answer", "both"):
+        where.append("a.text LIKE ?"); args.append(f"%{q}%")
+    elif q and scope == "prompt":
+        where.append("p.prompt LIKE ?"); args.append(f"%{q}%")
+    if tier:
+        where.append("a.tier=?"); args.append(tier)
+    if category:
+        where.append("a.category=?"); args.append(category)
+    if min_quality:
+        where.append("a.quality>=?"); args.append(min_quality)
+    sql = ("SELECT a.id, a.prompt_i, a.model, a.tier, a.category, a.length, a.quality, "
+           "substr(a.text,1,240) AS snippet, p.prompt FROM answers a JOIN prompts p ON a.prompt_i=p.i "
+           "WHERE " + " AND ".join(where) + " ORDER BY a.quality DESC NULLS LAST LIMIT ? OFFSET ?")
+    rows = _rows(con.execute(sql, (*args, size, page * size)))
+    total = con.execute("SELECT COUNT(*) n FROM answers a JOIN prompts p ON a.prompt_i=p.i WHERE " + " AND ".join(where), args).fetchone()["n"]
+    con.close()
+    return {"results": rows, "total": total, "page": page, "size": size}
+
+
+@router.get("/cluster_members")
+def cluster_members(algorithm: str, cluster: int, page: int = 0, size: int = 60):
+    con = _con()
+    meta = con.execute("SELECT * FROM cluster_meta WHERE algorithm=? AND cluster_id=?", (algorithm, cluster)).fetchone()
+    rows = _rows(con.execute(
+        "SELECT a.id, a.prompt_i, a.model, a.tier, a.category, a.length, a.quality, substr(a.text,1,200) AS snippet, p.prompt "
+        "FROM clusters cl JOIN answers a ON cl.node_id=a.id JOIN prompts p ON a.prompt_i=p.i "
+        "WHERE cl.algorithm=? AND cl.cluster_id=? ORDER BY a.quality DESC NULLS LAST LIMIT ? OFFSET ?",
+        (algorithm, cluster, size, page * size)))
+    con.close()
+    if meta is None:
+        raise HTTPException(404, "cluster not found")
+    return {"meta": dict(meta), "members": rows, "page": page, "size": size}
+
+
+@router.get("/cluster_edges")
+def cluster_edges(algorithm: str):
+    con = _con()
+    rows = _rows(con.execute("SELECT a, b, weight FROM cluster_edges WHERE algorithm=? ORDER BY weight DESC", (algorithm,)))
+    con.close()
+    return {"algorithm": algorithm, "edges": rows}
+
+
 @router.get("/clusters")
 def clusters(algorithm: str):
     """node_id→cluster assignment + per-cluster metadata (size, medoid, cohesion, coupling, color, centroid)."""

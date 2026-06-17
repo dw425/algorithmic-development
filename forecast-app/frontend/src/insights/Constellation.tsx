@@ -26,6 +26,8 @@ export default function Constellation({ onSelect }: { onSelect: (promptI: number
   const [tiers, setTiers] = useState<Set<Tier>>(new Set(TIERS));
   const [cat, setCat] = useState<string>("all");
   const [cluster, setCluster] = useState<{ algo: string; assign: number[]; chunks: Map<number, ClusterChunk> } | null>(null);
+  const [cedges, setCedges] = useState<{ a: number; b: number; weight: number }[]>([]);
+  const [edgesOn, setEdgesOn] = useState(true);
   const [hover, setHover] = useState<{ n: XNode; sx: number; sy: number } | null>(null);
   const host = useRef<HTMLDivElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
@@ -43,8 +45,9 @@ export default function Constellation({ onSelect }: { onSelect: (promptI: number
   // fetch cluster assignment when colorBy is a computed algorithm
   const isAlgo = useMemo(() => algos.some(a => a.id === colorBy && a.computed), [algos, colorBy]);
   useEffect(() => {
-    if (!isAlgo) { setCluster(null); return; }
+    if (!isAlgo) { setCluster(null); setCedges([]); return; }
     api.clusters(colorBy).then(d => setCluster({ algo: colorBy, assign: d.assignments, chunks: new Map(d.chunks.map(c => [c.cluster_id, c])) }));
+    api.clusterEdges(colorBy).then(e => setCedges(e.edges)).catch(() => setCedges([]));
   }, [colorBy, isAlgo]);
 
   const pos = useMemo(() => {
@@ -120,6 +123,19 @@ export default function Constellation({ onSelect }: { onSelect: (promptI: number
         ctx.closePath();
         ctx.fillStyle = hexA(g.color, k < LOD_FAR ? 0.05 : HULL_ALPHA); ctx.fill();
         if (k >= LOD_FAR) { ctx.strokeStyle = hexA(g.color, 0.35); ctx.lineWidth = 1; ctx.stroke(); }
+      }
+    }
+
+    // bundled cross-cluster edges (inter-cluster embedding similarity)
+    if (cluster && edgesOn && cedges.length) {
+      const byId = new Map(groups.map(g => [g.key, g]));
+      ctx.lineCap = "round";
+      for (const e of cedges) {
+        const ga = byId.get("c" + e.a), gb = byId.get("c" + e.b); if (!ga || !gb) continue;
+        const x0 = SX(ga.cx), y0 = SY(ga.cy), x1 = SX(gb.cx), y1 = SY(gb.cy);
+        const mx = (x0 + x1) / 2, my = (y0 + y1) / 2, dx = x1 - x0, dy = y1 - y0;
+        ctx.beginPath(); ctx.moveTo(x0, y0); ctx.quadraticCurveTo(mx - dy * 0.12, my + dx * 0.12, x1, y1);
+        ctx.strokeStyle = `rgba(148,163,184,${0.06 + e.weight * 0.2})`; ctx.lineWidth = Math.min(e.weight * 3, 2.6); ctx.stroke();
       }
     }
 
@@ -211,6 +227,8 @@ export default function Constellation({ onSelect }: { onSelect: (promptI: number
         <h3>Size by</h3>{Seg(sizeBy, v => setSizeBy(v as SizeBy), [["uniform", "Uniform"], ["quality", "Quality"], ["length", "Length"]])}
         <h3>Hulls</h3>
         <div className="ih-seg"><button className={hulls ? "on" : ""} onClick={() => setHulls(true)}>on</button><button className={!hulls ? "on" : ""} onClick={() => setHulls(false)}>off</button></div>
+        {cluster && cedges.length > 0 && <><h3>Cluster edges</h3>
+          <div className="ih-seg"><button className={edgesOn ? "on" : ""} onClick={() => setEdgesOn(true)}>on</button><button className={!edgesOn ? "on" : ""} onClick={() => setEdgesOn(false)}>off</button></div></>}
         <h3>Tiers</h3>
         <div className="ih-seg">{TIERS.map(t => <button key={t} className={tiers.has(t) ? "on" : ""}
           onClick={() => { const s = new Set(tiers); s.has(t) ? s.delete(t) : s.add(t); setTiers(s); }}>{t}</button>)}</div>

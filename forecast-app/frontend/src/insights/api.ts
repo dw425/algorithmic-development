@@ -34,7 +34,16 @@ export const api = {
   quality: () => get<{ model_leaderboard: ModelRow[]; by_category: CatRow[]; most_accurate: PromptRow[]; least_accurate: PromptRow[] }>("/quality"),
   algorithms: () => get<{ algorithms: AlgoInfo[] }>("/algorithms"),
   clusters: (algorithm: string) => get<{ algorithm: string; assignments: number[]; chunks: ClusterChunk[] }>(`/clusters?algorithm=${algorithm}`),
+  clusterMembers: (algorithm: string, cluster: number, page = 0) =>
+    get<{ meta: ClusterChunk; members: SearchHit[]; page: number; size: number }>(`/cluster_members?algorithm=${algorithm}&cluster=${cluster}&page=${page}`),
+  clusterEdges: (algorithm: string) => get<{ algorithm: string; edges: { a: number; b: number; weight: number }[] }>(`/cluster_edges?algorithm=${algorithm}`),
+  search: (p: { q?: string; scope?: string; tier?: string; category?: string; min_quality?: number; page?: number; size?: number }) => {
+    const qs = new URLSearchParams(Object.entries(p).filter(([, v]) => v !== undefined && v !== "").map(([k, v]) => [k, String(v)])).toString();
+    return get<{ results: SearchHit[]; total: number; page: number; size: number }>(`/search?${qs}`);
+  },
 };
+
+export interface SearchHit { id: number; prompt_i: number; model: string; tier: Tier; category: string; length: number; quality: number | null; snippet: string; prompt: string; }
 
 export interface AlgoInfo { id: string; name: string; family: string; computed: boolean; }
 export interface ClusterChunk { cluster_id: number; size: number; medoid_node: number; cohesion: number; coupling: number; color: string; cx: number; cy: number; label: string; }
