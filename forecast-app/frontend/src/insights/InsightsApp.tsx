@@ -1,4 +1,4 @@
-// MUSE InsightHub — app shell with etlviz-exact TOP toolbar chrome + shared prompt drawer.
+// MUSE InsightHub — app shell, etlviz top-toolbar chrome + shared prompt drawer.
 import { useState } from "react";
 import "./insights.css";
 import Constellation from "./Constellation";
@@ -13,12 +13,17 @@ import QualityLab from "./tabs/QualityLab";
 import AlgorithmLab from "./tabs/AlgorithmLab";
 import SearchExplorer from "./tabs/SearchExplorer";
 import NeuralNet from "./tabs/NeuralNet";
+import PromptView from "./tabs/PromptView";
+import ModelView from "./tabs/ModelView";
+import TierView from "./tabs/TierView";
+import DependencyView from "./tabs/DependencyView";
 
 const TABS = [
   ["overview", "◆", "Overview"], ["constellation", "✦", "Constellation"], ["network", "⧉", "Neural Net"],
+  ["dependency", "⊶", "Dependency"], ["prompt", "▦", "Prompt"], ["model", "⊙", "Model"], ["tier", "▥", "Tier"],
   ["algorithms", "⎔", "Algorithm Lab"], ["search", "⌕", "Search"], ["prompts", "▤", "Prompts"],
   ["tiers", "▣", "Tiers"], ["categories", "◫", "Categories"], ["models", "◉", "Models"],
-  ["divergence", "⟜", "Divergence"], ["quality", "★", "Quality"], ["vectoring", "✺", "Vectoring"],
+  ["divergence", "⟜", "Divergence"], ["quality", "★", "Quality"],
 ] as const;
 
 export default function InsightsApp() {
@@ -42,9 +47,13 @@ export default function InsightsApp() {
       <div className="ih-main">
         {tab === "overview" && <Overview onOpen={open} go={setTab} />}
         {tab === "constellation" && <><div className="ih-h1">Constellation</div>
-          <div className="ih-sub">Every answer is a star. Pick a clustering algorithm — it re-layouts the whole map. Bind any metric to color · size · filter. Click a star → its prompt.</div>
+          <div className="ih-sub">Every answer is a star. Pick a clustering algorithm — it re-layouts the whole map. Click a star = zoom · double-click = open.</div>
           <Constellation onSelect={open} /></>}
         {tab === "network" && <NeuralNet onOpen={open} />}
+        {tab === "dependency" && <DependencyView onOpen={open} />}
+        {tab === "prompt" && <PromptView onOpen={open} />}
+        {tab === "model" && <ModelView onOpen={open} />}
+        {tab === "tier" && <TierView onOpen={open} />}
         {tab === "algorithms" && <AlgorithmLab onOpen={open} />}
         {tab === "search" && <SearchExplorer onOpen={open} />}
         {tab === "prompts" && <PromptExplorer onOpen={open} />}
@@ -53,9 +62,6 @@ export default function InsightsApp() {
         {tab === "models" && <Models />}
         {tab === "divergence" && <DivergenceLab onOpen={open} />}
         {tab === "quality" && <QualityLab onOpen={open} />}
-        {tab === "vectoring" && <><div className="ih-h1">Vectoring — embedding space</div>
-          <div className="ih-sub">The 9,045 answers projected by their nomic embeddings. Color by category for topic clusters; by model to see how little model identity matters.</div>
-          <Constellation onSelect={open} /></>}
       </div>
       {prompt != null && <PromptDrawer i={prompt} onClose={() => setPrompt(null)} />}
     </div>
