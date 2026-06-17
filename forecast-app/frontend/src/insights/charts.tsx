@@ -11,7 +11,7 @@ export function Bars({ data, height = 220, fmt = (v: number) => v.toFixed(2), on
   const W = Math.max(320, data.length * 66), H = height, pad = 26, bw = (W - 16) / data.length;
   const max = Math.max(...data.map(d => d.value), 1e-9);
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxHeight: H + 10, display: "block" }}>
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ maxHeight: H + 10, maxWidth: W, display: "block" }}>
       {data.map((d, i) => {
         const h = (d.value / max) * (H - pad - 22), x = 8 + i * bw, y = H - pad - h;
         return (
@@ -45,15 +45,15 @@ export function HBars({ data, fmt = (v: number) => v.toFixed(2), max, onClick }:
   );
 }
 
-export function GroupedBars({ groups, series, height = 300, fmt = (v: number) => v.toFixed(2) }: {
+export function GroupedBars({ groups, series, height = 250, fmt = (v: number) => v.toFixed(2) }: {
   groups: string[]; series: { name: string; color: string; values: (number | null)[] }[]; height?: number; fmt?: (v: number) => string;
 }) {
   const [hov, setHov] = useState<{ g: number; s: number } | null>(null);
   const max = Math.max(...series.flatMap(s => s.values.map(v => v || 0)), 1e-9);
-  const W = Math.max(560, groups.length * 56), H = height, pad = 56, gw = (W - 16) / groups.length, bw = (gw * 0.74) / series.length;
+  const W = Math.max(560, groups.length * 52), H = height, pad = 56, gw = (W - 16) / groups.length, bw = (gw * 0.74) / series.length;
   return (
     <div style={{ position: "relative" }}>
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", maxWidth: W, maxHeight: H }}>
         {[0.25, 0.5, 0.75, 1].map(f => <line key={f} x1={8} x2={W - 8} y1={H - pad - f * (H - pad - 14)} y2={H - pad - f * (H - pad - 14)} stroke={LINE} strokeOpacity={0.4} />)}
         {groups.map((_g, gi) => series.map((s, si) => {
           const v = s.values[gi] || 0, h = (v / max) * (H - pad - 14), x = 8 + gi * gw + gw * 0.13 + si * bw, y = H - pad - h;

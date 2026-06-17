@@ -4,7 +4,6 @@ import "./insights.css";
 import Constellation from "./Constellation";
 import PromptDrawer from "./PromptDrawer";
 import Overview from "./tabs/Overview";
-import PromptExplorer from "./tabs/PromptExplorer";
 import Categories from "./tabs/Categories";
 import DivergenceLab from "./tabs/DivergenceLab";
 import QualityLab from "./tabs/QualityLab";
@@ -19,7 +18,7 @@ import DependencyView from "./tabs/DependencyView";
 const TABS = [
   ["overview", "◆", "Overview"], ["constellation", "✦", "Constellation"], ["network", "⧉", "Neural Net"],
   ["dependency", "⊶", "Dependency"], ["prompt", "▦", "Prompt"], ["model", "⊙", "Model"], ["tier", "▥", "Tier"],
-  ["algorithms", "⎔", "Algorithm Lab"], ["search", "⌕", "Search"], ["prompts", "▤", "Prompts"],
+  ["algorithms", "⎔", "Algorithm Lab"], ["search", "⌕", "Search"],
   ["categories", "◫", "Categories"], ["divergence", "⟜", "Divergence"], ["quality", "★", "Quality"],
 ] as const;
 
@@ -53,7 +52,6 @@ export default function InsightsApp() {
         {tab === "tier" && <TierView onOpen={open} />}
         {tab === "algorithms" && <AlgorithmLab onOpen={open} />}
         {tab === "search" && <SearchExplorer onOpen={open} />}
-        {tab === "prompts" && <PromptExplorer onOpen={open} />}
         {tab === "categories" && <Categories onOpen={open} />}
         {tab === "divergence" && <DivergenceLab onOpen={open} />}
         {tab === "quality" && <QualityLab onOpen={open} />}
