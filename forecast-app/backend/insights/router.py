@@ -53,17 +53,36 @@ def overview():
 
 
 @router.get("/constellation")
-def constellation(proj: str = Query("umap", pattern="^(pca|umap)$")):
-    """All answer nodes with coords + every encodable metric (no text — kept light)."""
+def constellation(proj: str = Query("umap", pattern="^(pca|umap)$"),
+                  bbox: str = "", cap: int = Query(26000, alias="max"), cluster_algo: str = ""):
+    """Answer nodes with coords + encodable metrics. Scales: returns all when total<=max, else a
+    uniform sample (overview) or the viewport (bbox) slice. Optional server-side cluster_id."""
     con = _con()
     xc, yc = (("umap_x", "umap_y") if proj == "umap" else ("pca_x", "pca_y"))
-    rows = _rows(con.execute(
-        f"SELECT id,prompt_i,model,tier,category,length,quality,{xc} AS x,{yc} AS y FROM answers"))
+    where: list = []; bargs: list = []
+    if bbox:
+        try:
+            x0, y0, x1, y1 = [float(v) for v in bbox.split(",")]
+        except Exception:
+            con.close(); raise HTTPException(400, "bad bbox")
+        where += [f"a.{xc} BETWEEN ? AND ?", f"a.{yc} BETWEEN ? AND ?"]; bargs += [min(x0, x1), max(x0, x1), min(y0, y1), max(y0, y1)]
+    bw = (" WHERE " + " AND ".join(where)) if where else ""
+    total = con.execute(f"SELECT COUNT(*) n FROM answers a{bw}", bargs).fetchone()["n"]
+    sampled = total > cap
+    awhere = list(where)
+    if sampled:
+        awhere.append(f"(a.id % {total // cap + 1})=0")     # deterministic uniform sample
+    aw = (" WHERE " + " AND ".join(awhere)) if awhere else ""
+    sel = f"SELECT a.id,a.prompt_i,a.model,a.tier,a.category,a.length,a.quality,a.{xc} AS x,a.{yc} AS y"
+    frm = "FROM answers a"; args: list = []
+    if cluster_algo:
+        sel += ",cl.cluster_id AS cluster"; frm += " LEFT JOIN clusters cl ON cl.node_id=a.id AND cl.algorithm=?"; args.append(cluster_algo)
+    rows = _rows(con.execute(f"{sel} {frm}{aw} LIMIT {cap}", (*args, *bargs)))
     cats = [r["name"] for r in con.execute("SELECT name FROM categories ORDER BY name")]
     models = [dict(r) for r in con.execute("SELECT name,tier FROM models")]
     con.close()
-    return {"proj": proj, "nodes": rows, "categories": cats, "models": models,
-            "tiers": ["small", "medium", "large"]}
+    return {"proj": proj, "nodes": rows, "total": total, "returned": len(rows), "sampled": sampled,
+            "categories": cats, "models": models, "tiers": ["small", "medium", "large"]}
 
 
 @router.get("/prompts")
@@ -160,7 +179,7 @@ def quality():
 @router.get("/vectoring")
 def vectoring(proj: str = Query("umap", pattern="^(pca|umap)$")):
     """Same nodes as constellation — front-end uses this tab for embedding-space exploration."""
-    return constellation(proj)
+    return constellation(proj, "", 26000, "")
 
 
 ALGORITHMS = [
@@ -184,31 +203,41 @@ def algorithms():
     return {"algorithms": [a for a in ALGORITHMS if not a["computed"] or a["id"] in have]}
 
 
+def _has_fts(con):
+    return bool(con.execute("SELECT 1 FROM sqlite_master WHERE name='search_fts'").fetchone())
+
+
 @router.get("/search")
 def search(q: str = "", scope: str = Query("both", pattern="^(prompt|answer|both)$"),
            tier: str = "", category: str = "", min_quality: float = 0.0,
            page: int = 0, size: int = 50):
-    """Full-text search over prompts AND/OR answers, with filters + pagination (scales via LIMIT/OFFSET;
-    swap LIKE for an FTS5 virtual table at 100K)."""
-    con = _con()
-    where = ["1=1"]; args: list = []
-    if q and scope in ("answer", "both"):
-        where.append("a.text LIKE ?"); args.append(f"%{q}%")
-    elif q and scope == "prompt":
-        where.append("p.prompt LIKE ?"); args.append(f"%{q}%")
-    if tier:
-        where.append("a.tier=?"); args.append(tier)
-    if category:
-        where.append("a.category=?"); args.append(category)
-    if min_quality:
-        where.append("a.quality>=?"); args.append(min_quality)
-    sql = ("SELECT a.id, a.prompt_i, a.model, a.tier, a.category, a.length, a.quality, "
-           "substr(a.text,1,240) AS snippet, p.prompt FROM answers a JOIN prompts p ON a.prompt_i=p.i "
-           "WHERE " + " AND ".join(where) + " ORDER BY a.quality DESC NULLS LAST LIMIT ? OFFSET ?")
-    rows = _rows(con.execute(sql, (*args, size, page * size)))
-    total = con.execute("SELECT COUNT(*) n FROM answers a JOIN prompts p ON a.prompt_i=p.i WHERE " + " AND ".join(where), args).fetchone()["n"]
+    """Full-text search over prompts AND/OR answers, filtered + paginated. Uses FTS5 when present
+    (scales to 100K); falls back to LIKE otherwise."""
+    con = _con(); fts = _has_fts(con)
+    sel = ("SELECT a.id, a.prompt_i, a.model, a.tier, a.category, a.length, a.quality, "
+           "substr(a.text,1,240) AS snippet, p.prompt FROM answers a JOIN prompts p ON a.prompt_i=p.i")
+    cnt = "SELECT COUNT(*) n FROM answers a JOIN prompts p ON a.prompt_i=p.i"
+    where: list = []; args: list = []
+    if tier: where.append("a.tier=?"); args.append(tier)
+    if category: where.append("a.category=?"); args.append(category)
+    if min_quality: where.append("a.quality>=?"); args.append(min_quality)
+    if q.strip():
+        if fts:
+            terms = " ".join(f'"{t}"' for t in q.replace('"', " ").split() if t)
+            match = f"answer:({terms})" if scope == "answer" else f"prompt:({terms})" if scope == "prompt" else terms
+            sel += " JOIN search_fts f ON f.node_id=a.id"; cnt += " JOIN search_fts f ON f.node_id=a.id"
+            where.append("search_fts MATCH ?"); args.append(match)
+        else:
+            col = "p.prompt" if scope == "prompt" else "a.text"
+            where.append(f"{col} LIKE ?"); args.append(f"%{q}%")
+    wsql = (" WHERE " + " AND ".join(where)) if where else ""
+    try:
+        rows = _rows(con.execute(sel + wsql + " ORDER BY a.quality DESC LIMIT ? OFFSET ?", (*args, size, page * size)))
+        total = con.execute(cnt + wsql, args).fetchone()["n"]
+    except Exception:
+        con.close(); raise HTTPException(400, "invalid search query")
     con.close()
-    return {"results": rows, "total": total, "page": page, "size": size}
+    return {"results": rows, "total": total, "page": page, "size": size, "fts": fts}
 
 
 @router.get("/cluster_members")

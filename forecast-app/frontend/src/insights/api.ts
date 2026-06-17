@@ -14,15 +14,21 @@ export interface PairRow { tier: Tier; a: string; b: string; divergence: number;
 export interface CatRow { name: string; n: number; sm_div: number; md_div: number; lg_div: number; sm_qual: number | null; md_qual: number | null; lg_qual: number | null; }
 export interface ModelRow { name: string; tier: Tier; mean_quality: number | null; mean_len: number | null; n: number; }
 export interface PromptRow { i: number; category: string; prompt: string; sm_div: number | null; md_div: number | null; lg_div: number | null; avg_quality: number | null; n_judged: number; }
-export interface Node { id: number; prompt_i: number; model: string; tier: Tier; category: string; length: number; quality: number | null; x: number; y: number; }
+export interface Node { id: number; prompt_i: number; model: string; tier: Tier; category: string; length: number; quality: number | null; x: number; y: number; cluster?: number; }
 export interface AnswerFull { id: number; model: string; tier: Tier; category: string; length: number; quality: number | null; text: string; }
 
 export interface Overview { meta: Record<string, string>; tiers: TierRow[]; n_categories: number; top_divergent: PromptRow[]; }
-export interface Constellation { proj: string; nodes: Node[]; categories: string[]; models: { name: string; tier: Tier }[]; tiers: Tier[]; }
+export interface Constellation { proj: string; nodes: Node[]; total: number; returned: number; sampled: boolean; categories: string[]; models: { name: string; tier: Tier }[]; tiers: Tier[]; }
 
 export const api = {
   overview: () => get<Overview>("/overview"),
-  constellation: (proj: "pca" | "umap") => get<Constellation>(`/constellation?proj=${proj}`),
+  constellation: (proj: "pca" | "umap", opts?: { bbox?: string; max?: number; cluster_algo?: string }) => {
+    const p: Record<string, string> = { proj };
+    if (opts?.bbox) p.bbox = opts.bbox;
+    if (opts?.max) p.max = String(opts.max);
+    if (opts?.cluster_algo) p.cluster_algo = opts.cluster_algo;
+    return get<Constellation>(`/constellation?${new URLSearchParams(p).toString()}`);
+  },
   prompts: (search = "", sort = "i", order = "asc") =>
     get<{ prompts: PromptRow[]; count: number }>(`/prompts?search=${encodeURIComponent(search)}&sort=${sort}&order=${order}`),
   prompt: (i: number) => get<{ prompt: PromptRow; answers: AnswerFull[] }>(`/prompt/${i}`),
