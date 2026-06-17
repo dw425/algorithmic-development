@@ -18,6 +18,7 @@ import { VectorCloud, Cluster3D, FunnelView, ConstellationView, DependencyMap } 
 import { Predictability, Calibration, MCS, Drift } from "./pages/DiagnosticsPages";
 import { Compare, Repository } from "./pages/UniverseExtra";
 import EtlEmbed from "./pages/EtlEmbed";
+import InsightsApp from "./insights/InsightsApp";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -50,6 +51,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/universe/repository" element={<Repository />} />
             <Route path="/flow" element={<Platform />} />
             <Route path="/etl" element={<EtlEmbed />} />
+            <Route path="/insights" element={<InsightsApp />} />
             <Route path="/diagnostics/predictability" element={<Predictability />} />
             <Route path="/diagnostics/calibration" element={<Calibration />} />
             <Route path="/diagnostics/mcs" element={<MCS />} />

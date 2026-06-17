@@ -43,6 +43,14 @@ try:
 except Exception as _e:  # noqa
     print(f"[etlviz] integration unavailable: {str(_e)[:160]}")
 
+# ---- MUSE InsightHub: cross-tier model-analysis dataset, under /insights/api ----
+try:
+    from insights.router import router as _insights_router
+    app.include_router(_insights_router, prefix="/insights/api")
+    print("[insights] InsightHub mounted under /insights/api")
+except Exception as _e:  # noqa
+    print(f"[insights] integration unavailable: {str(_e)[:160]}")
+
 
 @app.get("/health")
 def health():
