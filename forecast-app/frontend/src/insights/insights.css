@@ -1,9 +1,23 @@
 /* MUSE InsightHub — EXACT etlviz (ETL Dep-Viz) theme: tokens from etlviz/components/tiermap/constants.ts */
 .ih { --bg:#1a2332; --surface:#243044; --surface2:#1e2a3d; --line:#3a4a5e; --line2:#4a5a6e;
   --active:#3b82f6; --accent:#60a5fa; --ink:#e2e8f0; --dim:#8899aa; --faint:#5a6a7a;
-  position:absolute; inset:0; display:flex; background:var(--bg); color:var(--ink);
+  position:absolute; inset:0; display:flex; flex-direction:column; background:var(--bg); color:var(--ink);
   font-family:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace; overflow:hidden; font-size:13px; }
 .ih * { box-sizing:border-box; }
+
+/* top toolbar (etlviz exact chrome) */
+.ih-topbar { display:flex; align-items:center; gap:16px; padding:8px 20px; border-bottom:1px solid var(--line);
+  background:var(--surface2); flex:0 0 auto; }
+.ih-topbar .brand { display:flex; flex-direction:column; line-height:1.2; flex:0 0 auto; padding-right:6px; }
+.ih-topbar .brand b { font-size:15px; font-weight:700; color:#fff; letter-spacing:-0.02em; }
+.ih-topbar .brand small { font-size:10px; color:var(--dim); text-transform:uppercase; letter-spacing:.5px; }
+.ih-toptabs { display:flex; gap:2px; flex-wrap:wrap; align-items:center; flex:1; }
+.ih-toptab { display:flex; align-items:center; gap:6px; padding:6px 11px; border-radius:5px; cursor:pointer; border:none;
+  background:transparent; font-family:inherit; font-size:11px; font-weight:600; color:var(--dim); transition:.1s; }
+.ih-toptab:hover { color:var(--ink); background:var(--surface); }
+.ih-toptab.on { background:#1f3a5f; color:var(--accent); }
+.ih-toptab .ic { opacity:.85; font-size:12px; }
+.ih-topright { color:var(--faint); font-size:10px; text-align:right; line-height:1.6; text-transform:uppercase; letter-spacing:.4px; flex:0 0 auto; }
 
 /* sidebar (etlviz rail) */
 .ih-side { width:218px; flex:0 0 218px; background:var(--surface2); border-right:1px solid var(--line);
@@ -51,7 +65,7 @@
 .ih-chip.on { color:#fff; border-color:var(--active); background:#1f3a5f; }
 
 /* constellation */
-.ih-const-wrap { display:flex; gap:12px; height:calc(100vh - 122px); }
+.ih-const-wrap { display:flex; gap:12px; height:calc(100vh - 148px); }
 .ih-canvas-host { flex:1; position:relative; background:#141d29;
   border:1px solid var(--line); border-radius:7px; overflow:hidden; }
 .ih-canvas-host canvas { display:block; width:100%; height:100%; }
