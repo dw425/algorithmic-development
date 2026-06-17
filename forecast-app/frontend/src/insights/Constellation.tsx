@@ -8,6 +8,7 @@ type Layout = "umap" | "pca" | "category" | "tier" | "cluster";
 type SizeBy = "uniform" | "quality" | "length";
 const TIERS: Tier[] = ["small", "medium", "large"];
 const LOD_FAR = 0.8, HULL_ALPHA = 0.09, DOT_R = 2.4, MAX_NODES = 26000;
+const ZL = [1, 1.8, 3.2, 5.6, 9.6];   // 5 discrete zoom levels (drill-in, not infinite canvas)
 
 function hexA(hex: string, a: number) {
   const h = hex.replace("#", ""); return `rgba(${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)},${a})`;
@@ -34,13 +35,22 @@ export default function Constellation({ onSelect }: { onSelect: (promptI: number
   const sizeRef = useRef({ w: 800, h: 600 });
   const fetchTimer = useRef<number | undefined>(undefined);
   const zoomRef = useRef<d3.ZoomBehavior<HTMLCanvasElement, unknown> | null>(null);
+  const drawRef = useRef<() => void>(() => {});
+  const level = useRef(0);
 
-  const flyTo = (n: Node) => {
-    const p = pos.get(n.id); const c = cv.current; if (!p || !c || !zoomRef.current) return;
-    const { w, h } = sizeRef.current, k = Math.max(6, tf.current.k);
-    const t = d3.zoomIdentity.translate(w / 2, h / 2).scale(k).translate(-p[0] * w, -p[1] * h);
-    d3.select(c).transition().duration(550).call(zoomRef.current.transform, t);
+  const zoomToLevel = (lv: number, cx: number, cy: number) => {
+    const c = cv.current; if (!c || !zoomRef.current) return;
+    level.current = Math.max(0, Math.min(ZL.length - 1, lv));
+    const k = ZL[level.current], [px, py] = tf.current.invert([cx, cy]);
+    const t = d3.zoomIdentity.translate(cx - k * px, cy - k * py).scale(k);
+    d3.select(c).transition().duration(300).call(zoomRef.current.transform, t);
   };
+  const flyTo = (n: Node) => {
+    const p = pos.get(n.id), c = cv.current; if (!p || !c) return;
+    const { w, h } = sizeRef.current;
+    zoomToLevel(level.current + 1, tf.current.applyX(p[0] * w), tf.current.applyY(p[1] * h));
+  };
+  const setZoom = (lv: number) => { const { w, h } = sizeRef.current; zoomToLevel(lv, w / 2, h / 2); };
 
   const proj = layout === "pca" ? "pca" : "umap";
   const isAlgo = useMemo(() => algos.some(a => a.id === colorBy && a.computed), [algos, colorBy]);
@@ -132,7 +142,10 @@ export default function Constellation({ onSelect }: { onSelect: (promptI: number
 
   const draw = () => {
     const c = cv.current; if (!c) return;
-    const { w, h } = sizeRef.current, dpr = window.devicePixelRatio || 1;
+    const rect = c.getBoundingClientRect(); const w = Math.round(rect.width), h = Math.round(rect.height);
+    if (w < 2 || h < 2) return;
+    sizeRef.current = { w, h };
+    const dpr = window.devicePixelRatio || 1;
     c.width = w * dpr; c.height = h * dpr; const ctx = c.getContext("2d")!; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
     const t = tf.current, k = t.k;
@@ -169,27 +182,37 @@ export default function Constellation({ onSelect }: { onSelect: (promptI: number
     if (hover) { const p = pos.get(hover.n.id)!; ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.beginPath();
       ctx.arc(SX(p[0]), SY(p[1]), sizeOf(hover.n) * Math.min(2.2, Math.sqrt(k)) + 3, 0, 6.283); ctx.stroke(); }
   };
-  useEffect(() => { draw(); });
+  drawRef.current = draw;
+
+  // redraw only when data / view / hover actually change (not on every render → no flicker)
+  useEffect(() => { drawRef.current(); },
+    [nodes, pos, groups, hover, colorBy, chunks, cedges, hulls, edgesOn, sizeBy, layout, tiers, cat]);
 
   useEffect(() => {
     const c = cv.current, hh = host.current; if (!c || !hh) return;
-    const ro = new ResizeObserver(() => { sizeRef.current = { w: hh.clientWidth, h: hh.clientHeight }; draw(); });
-    ro.observe(hh); sizeRef.current = { w: hh.clientWidth, h: hh.clientHeight };
-    const zoom = d3.zoom<HTMLCanvasElement, unknown>().scaleExtent([0.5, 40]).on("zoom", e => {
-      tf.current = e.transform; setHover(null); draw();
-      if (meta.sampled) {   // at scale: debounced viewport refetch for detail
-        clearTimeout(fetchTimer.current);
-        fetchTimer.current = window.setTimeout(() => {
-          const t = tf.current, { w, h } = sizeRef.current;
-          const x0 = t.invertX(0) / w, y0 = t.invertY(0) / h, x1 = t.invertX(w) / w, y1 = t.invertY(h) / h;
-          fetchNodes(`${x0.toFixed(4)},${y0.toFixed(4)},${x1.toFixed(4)},${y1.toFixed(4)}`);
-        }, 280);
-      }
-    });
+    const ro = new ResizeObserver(() => drawRef.current());
+    ro.observe(hh);
+    const zoom = d3.zoom<HTMLCanvasElement, unknown>().scaleExtent([ZL[0], ZL[ZL.length - 1]])
+      .filter(e => e.type !== "wheel")                 // drag = pan; wheel = discrete steps (handled below)
+      .on("zoom", e => {
+        tf.current = e.transform; drawRef.current();
+        if (meta.sampled) {
+          clearTimeout(fetchTimer.current);
+          fetchTimer.current = window.setTimeout(() => {
+            const t = tf.current, { w, h } = sizeRef.current;
+            fetchNodes(`${(t.invertX(0) / w).toFixed(4)},${(t.invertY(0) / h).toFixed(4)},${(t.invertX(w) / w).toFixed(4)},${(t.invertY(h) / h).toFixed(4)}`);
+          }, 280);
+        }
+      });
     zoomRef.current = zoom;
-    d3.select(c).call(zoom).on("dblclick.zoom", null);   // dbl-click opens the prompt instead of zooming
-    return () => ro.disconnect();
-  }, [meta.sampled, proj, colorBy]);   // eslint-disable-line
+    d3.select(c).call(zoom).on("dblclick.zoom", null);
+    const onWheel = (e: WheelEvent) => { e.preventDefault(); const r = c.getBoundingClientRect();
+      zoomToLevel(level.current + (e.deltaY < 0 ? 1 : -1), e.clientX - r.left, e.clientY - r.top); };
+    c.addEventListener("wheel", onWheel, { passive: false });
+    return () => { ro.disconnect(); c.removeEventListener("wheel", onWheel); };
+  }, [meta.sampled]);   // eslint-disable-line
+
+  useEffect(() => { setZoom(0); }, [layout, proj, colorBy]);   // reset to full view on layout/algorithm change // eslint-disable-line
 
   const onMove = (e: React.MouseEvent) => {
     const r = cv.current!.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, t = tf.current, { w, h } = sizeRef.current;
@@ -212,8 +235,12 @@ export default function Constellation({ onSelect }: { onSelect: (promptI: number
           <div style={{ fontSize: 11 }}>len {hover.n.length} · quality {hover.n.quality ?? "—"}</div>
           <div style={{ fontSize: 11, marginTop: 4, color: "#60a5fa" }}>click = zoom · dbl-click = open #{hover.n.prompt_i}</div>
         </div>}
-        <div style={{ position: "absolute", left: 12, bottom: 10, fontSize: 11, color: "#9aa0b4" }}>
-          {meta.returned.toLocaleString()}{meta.sampled ? ` of ${meta.total.toLocaleString()} (sampled — zoom in for detail)` : " answers"} · {groups.length ? `${groups.length} clusters` : "gradient"} · click a star</div>
+        <div style={{ position: "absolute", right: 12, top: 12, display: "flex", flexDirection: "column", gap: 5 }}>
+          {[["+", () => setZoom(level.current + 1)], ["−", () => setZoom(level.current - 1)], ["⊡", () => setZoom(0)]].map(([t, fn], k) =>
+            <button key={k} onClick={fn as () => void} style={{ width: 28, height: 28, borderRadius: 5, border: "1px solid var(--line2)", background: "#1a2332cc", color: "var(--ink)", cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>{t as string}</button>)}
+        </div>
+        <div style={{ position: "absolute", left: 12, bottom: 10, fontSize: 11, color: "var(--dim)" }}>
+          {meta.returned.toLocaleString()}{meta.sampled ? ` of ${meta.total.toLocaleString()} (sampled)` : " answers"} · {groups.length ? `${groups.length} clusters` : "gradient"} · scroll = drill 5 levels · drag = pan · click = zoom in · dbl-click = open</div>
       </div>
       <div className="ih-encode">
         <h3>Layout</h3>{Seg(layout, v => setLayout(v as Layout), [["cluster", "Clusters"], ["umap", "UMAP"], ["pca", "PCA"], ["category", "By cat"], ["tier", "Tiers"]])}

@@ -5,9 +5,7 @@ import Constellation from "./Constellation";
 import PromptDrawer from "./PromptDrawer";
 import Overview from "./tabs/Overview";
 import PromptExplorer from "./tabs/PromptExplorer";
-import Tiers from "./tabs/Tiers";
 import Categories from "./tabs/Categories";
-import Models from "./tabs/Models";
 import DivergenceLab from "./tabs/DivergenceLab";
 import QualityLab from "./tabs/QualityLab";
 import AlgorithmLab from "./tabs/AlgorithmLab";
@@ -22,8 +20,7 @@ const TABS = [
   ["overview", "◆", "Overview"], ["constellation", "✦", "Constellation"], ["network", "⧉", "Neural Net"],
   ["dependency", "⊶", "Dependency"], ["prompt", "▦", "Prompt"], ["model", "⊙", "Model"], ["tier", "▥", "Tier"],
   ["algorithms", "⎔", "Algorithm Lab"], ["search", "⌕", "Search"], ["prompts", "▤", "Prompts"],
-  ["tiers", "▣", "Tiers"], ["categories", "◫", "Categories"], ["models", "◉", "Models"],
-  ["divergence", "⟜", "Divergence"], ["quality", "★", "Quality"],
+  ["categories", "◫", "Categories"], ["divergence", "⟜", "Divergence"], ["quality", "★", "Quality"],
 ] as const;
 
 export default function InsightsApp() {
@@ -57,9 +54,7 @@ export default function InsightsApp() {
         {tab === "algorithms" && <AlgorithmLab onOpen={open} />}
         {tab === "search" && <SearchExplorer onOpen={open} />}
         {tab === "prompts" && <PromptExplorer onOpen={open} />}
-        {tab === "tiers" && <Tiers />}
         {tab === "categories" && <Categories onOpen={open} />}
-        {tab === "models" && <Models />}
         {tab === "divergence" && <DivergenceLab onOpen={open} />}
         {tab === "quality" && <QualityLab onOpen={open} />}
       </div>
