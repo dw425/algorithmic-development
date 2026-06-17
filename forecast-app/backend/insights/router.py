@@ -161,3 +161,37 @@ def quality():
 def vectoring(proj: str = Query("umap", pattern="^(pca|umap)$")):
     """Same nodes as constellation — front-end uses this tab for embedding-space exploration."""
     return constellation(proj)
+
+
+ALGORITHMS = [
+    {"id": "category", "name": "Category (ground truth)", "family": "label", "computed": False},
+    {"id": "tier", "name": "Tier", "family": "label", "computed": False},
+    {"id": "model", "name": "Model", "family": "label", "computed": False},
+    {"id": "louvain", "name": "Louvain (modularity)", "family": "community", "computed": True},
+    {"id": "gravity", "name": "Gravity (k-medoid)", "family": "concentration", "computed": True},
+    {"id": "kmeans", "name": "K-means (centroid)", "family": "centroid", "computed": True},
+    {"id": "spectral", "name": "Spectral", "family": "spectral", "computed": True},
+    {"id": "hdbscan", "name": "HDBSCAN (density)", "family": "density", "computed": True},
+    {"id": "agglomerative", "name": "Agglomerative (Ward)", "family": "hierarchical", "computed": True},
+]
+
+
+@router.get("/algorithms")
+def algorithms():
+    con = _con()
+    have = {r["algorithm"] for r in con.execute("SELECT DISTINCT algorithm FROM clusters")}
+    con.close()
+    return {"algorithms": [a for a in ALGORITHMS if not a["computed"] or a["id"] in have]}
+
+
+@router.get("/clusters")
+def clusters(algorithm: str):
+    """node_id→cluster assignment + per-cluster metadata (size, medoid, cohesion, coupling, color, centroid)."""
+    con = _con()
+    rows = con.execute("SELECT node_id, cluster_id FROM clusters WHERE algorithm=? ORDER BY node_id",
+                       (algorithm,)).fetchall()
+    meta = _rows(con.execute("SELECT * FROM cluster_meta WHERE algorithm=? ORDER BY size DESC", (algorithm,)))
+    con.close()
+    if not rows:
+        raise HTTPException(404, f"algorithm '{algorithm}' not computed")
+    return {"algorithm": algorithm, "assignments": [r["cluster_id"] for r in rows], "chunks": meta}

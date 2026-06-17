@@ -32,7 +32,16 @@ export const api = {
   divergence: (tier: Tier, order: "asc" | "desc", limit = 30) =>
     get<{ tier: Tier; order: string; prompts: { i: number; category: string; prompt: string; div: number }[] }>(`/divergence?tier=${tier}&order=${order}&limit=${limit}`),
   quality: () => get<{ model_leaderboard: ModelRow[]; by_category: CatRow[]; most_accurate: PromptRow[]; least_accurate: PromptRow[] }>("/quality"),
+  algorithms: () => get<{ algorithms: AlgoInfo[] }>("/algorithms"),
+  clusters: (algorithm: string) => get<{ algorithm: string; assignments: number[]; chunks: ClusterChunk[] }>(`/clusters?algorithm=${algorithm}`),
 };
+
+export interface AlgoInfo { id: string; name: string; family: string; computed: boolean; }
+export interface ClusterChunk { cluster_id: number; size: number; medoid_node: number; cohesion: number; coupling: number; color: string; cx: number; cy: number; label: string; }
+
+// etlviz 12-color chunk palette (for client-derived groups: category/tier/model)
+export const CHUNK_PALETTE = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#A855F7", "#06B6D4",
+  "#EC4899", "#84CC16", "#F97316", "#8B5CF6", "#14B8A6", "#FB923C"];
 
 // ---- shared visual scales (consistent colors across all tabs) ----
 export const TIER_COLOR: Record<Tier, string> = { small: "#9ecae1", medium: "#4C72B0", large: "#22d3a8" };
