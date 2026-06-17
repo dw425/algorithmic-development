@@ -33,6 +33,14 @@ export default function Constellation({ onSelect }: { onSelect: (promptI: number
   const tf = useRef(d3.zoomIdentity);
   const sizeRef = useRef({ w: 800, h: 600 });
   const fetchTimer = useRef<number | undefined>(undefined);
+  const zoomRef = useRef<d3.ZoomBehavior<HTMLCanvasElement, unknown> | null>(null);
+
+  const flyTo = (n: Node) => {
+    const p = pos.get(n.id); const c = cv.current; if (!p || !c || !zoomRef.current) return;
+    const { w, h } = sizeRef.current, k = Math.max(6, tf.current.k);
+    const t = d3.zoomIdentity.translate(w / 2, h / 2).scale(k).translate(-p[0] * w, -p[1] * h);
+    d3.select(c).transition().duration(550).call(zoomRef.current.transform, t);
+  };
 
   const proj = layout === "pca" ? "pca" : "umap";
   const isAlgo = useMemo(() => algos.some(a => a.id === colorBy && a.computed), [algos, colorBy]);
@@ -178,7 +186,8 @@ export default function Constellation({ onSelect }: { onSelect: (promptI: number
         }, 280);
       }
     });
-    d3.select(c).call(zoom);
+    zoomRef.current = zoom;
+    d3.select(c).call(zoom).on("dblclick.zoom", null);   // dbl-click opens the prompt instead of zooming
     return () => ro.disconnect();
   }, [meta.sampled, proj, colorBy]);   // eslint-disable-line
 
@@ -195,12 +204,13 @@ export default function Constellation({ onSelect }: { onSelect: (promptI: number
     <div className="ih-const-wrap">
       <div className="ih-canvas-host" ref={host}>
         <canvas ref={cv} onMouseMove={onMove} onMouseLeave={() => setHover(null)}
-          onClick={() => hover && onSelect(hover.n.prompt_i)} style={{ cursor: hover ? "pointer" : "grab" }} />
+          onClick={() => hover && flyTo(hover.n)} onDoubleClick={() => hover && onSelect(hover.n.prompt_i)}
+          style={{ cursor: hover ? "zoom-in" : "grab" }} />
         {hover && <div className="ih-tip" style={{ left: Math.min(hover.sx + 14, sizeRef.current.w - 250), top: hover.sy + 12 }}>
           <div style={{ fontWeight: 700, color: colorOf(hover.n) }}>{hover.n.model}</div>
           <div className="ih-muted" style={{ fontSize: 11, margin: "3px 0" }}>{hover.n.tier} · {hover.n.category}{isAlgo && hover.n.cluster != null ? ` · ${chunks?.get(hover.n.cluster)?.label ?? "noise"}` : ""}</div>
           <div style={{ fontSize: 11 }}>len {hover.n.length} · quality {hover.n.quality ?? "—"}</div>
-          <div style={{ fontSize: 11, marginTop: 4, color: "#7dd3fc" }}>click → prompt #{hover.n.prompt_i}</div>
+          <div style={{ fontSize: 11, marginTop: 4, color: "#60a5fa" }}>click = zoom · dbl-click = open #{hover.n.prompt_i}</div>
         </div>}
         <div style={{ position: "absolute", left: 12, bottom: 10, fontSize: 11, color: "#9aa0b4" }}>
           {meta.returned.toLocaleString()}{meta.sampled ? ` of ${meta.total.toLocaleString()} (sampled — zoom in for detail)` : " answers"} · {groups.length ? `${groups.length} clusters` : "gradient"} · click a star</div>

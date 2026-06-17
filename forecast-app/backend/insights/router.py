@@ -112,6 +112,15 @@ def prompt(i: int):
     return {"prompt": dict(p), "answers": answers}
 
 
+@router.get("/prompt_sim/{i}")
+def prompt_sim(i: int):
+    """Pairwise similarity of a prompt's answers (for Neural Net match-recolor). Returns answer ids."""
+    con = _con()
+    pairs = _rows(con.execute("SELECT a, b, sim FROM answer_sim WHERE prompt_i=?", (i,)))
+    con.close()
+    return {"prompt_i": i, "pairs": pairs}
+
+
 @router.get("/answer/{aid}")
 def answer(aid: int):
     con = _con()
@@ -209,7 +218,7 @@ def _has_fts(con):
 
 @router.get("/search")
 def search(q: str = "", scope: str = Query("both", pattern="^(prompt|answer|both)$"),
-           tier: str = "", category: str = "", min_quality: float = 0.0,
+           tier: str = "", category: str = "", model: str = "", min_quality: float = 0.0,
            page: int = 0, size: int = 50):
     """Full-text search over prompts AND/OR answers, filtered + paginated. Uses FTS5 when present
     (scales to 100K); falls back to LIKE otherwise."""
@@ -220,6 +229,7 @@ def search(q: str = "", scope: str = Query("both", pattern="^(prompt|answer|both
     where: list = []; args: list = []
     if tier: where.append("a.tier=?"); args.append(tier)
     if category: where.append("a.category=?"); args.append(category)
+    if model: where.append("a.model=?"); args.append(model)
     if min_quality: where.append("a.quality>=?"); args.append(min_quality)
     if q.strip():
         if fts:

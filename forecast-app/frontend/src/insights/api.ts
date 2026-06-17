@@ -43,7 +43,8 @@ export const api = {
   clusterMembers: (algorithm: string, cluster: number, page = 0) =>
     get<{ meta: ClusterChunk; members: SearchHit[]; page: number; size: number }>(`/cluster_members?algorithm=${algorithm}&cluster=${cluster}&page=${page}`),
   clusterEdges: (algorithm: string) => get<{ algorithm: string; edges: { a: number; b: number; weight: number }[] }>(`/cluster_edges?algorithm=${algorithm}`),
-  search: (p: { q?: string; scope?: string; tier?: string; category?: string; min_quality?: number; page?: number; size?: number }) => {
+  promptSim: (i: number) => get<{ prompt_i: number; pairs: { a: number; b: number; sim: number }[] }>(`/prompt_sim/${i}`),
+  search: (p: { q?: string; scope?: string; tier?: string; category?: string; model?: string; min_quality?: number; page?: number; size?: number }) => {
     const qs = new URLSearchParams(Object.entries(p).filter(([, v]) => v !== undefined && v !== "").map(([k, v]) => [k, String(v)])).toString();
     return get<{ results: SearchHit[]; total: number; page: number; size: number }>(`/search?${qs}`);
   },
