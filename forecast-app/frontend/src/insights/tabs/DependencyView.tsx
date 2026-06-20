@@ -1,4 +1,4 @@
-// MUSE InsightHub — Dependency: an etlviz-style relationship graph of the 9 models. Nodes are
+// MUSE InsightHub — Dependency: an etlviz-style relationship graph of the 21 models. Nodes are
 // models laid out in 3 tier columns; edges are within-tier answer-agreement (similarity). Thicker
 // edge = stronger agreement. Below: per-tier 3x3 similarity heatmaps + tier cohesion bars.
 import { useEffect, useMemo, useState } from "react";

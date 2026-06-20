@@ -38,7 +38,7 @@ export default function InsightsApp() {
             </button>
           ))}
         </div>
-        <div className="ih-topright">1,005 prompts · 9 models<br />9,045 answers</div>
+        <div className="ih-topright">1,005-prompt pilot · 21 models (7/tier)<br />21,061 answers</div>
       </div>
       <div className="ih-main">
         {tab === "overview" && <Overview onOpen={open} go={setTab} />}

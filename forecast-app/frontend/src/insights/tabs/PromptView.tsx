@@ -1,4 +1,4 @@
-// MUSE InsightHub — Prompt: a full-page deep view of one prompt across all 9 models,
+// MUSE InsightHub — Prompt: a full-page deep view of one prompt across all 21 models,
 // with prompt-by-prompt drill navigation (prev/next/jump) through the ordered prompt list.
 import { useEffect, useMemo, useState } from "react";
 import { api, TIER_COLOR, MODEL_COLOR, fmt, type AnswerFull, type PromptRow } from "../api";

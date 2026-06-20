@@ -1,4 +1,4 @@
-// MUSE InsightHub — Neural Net: one prompt through all 9 models. Click a neuron → popup; SELECT it
+// MUSE InsightHub — Neural Net: one prompt through all 21 models. Click a neuron → popup; SELECT it
 // → every other neuron recolors green→yellow→red by similarity, best-match paths highlighted.
 import { useEffect, useMemo, useState } from "react";
 import { api, TIER_COLOR, MODEL_COLOR, fmt, type AnswerFull, type PromptRow } from "../api";
@@ -46,7 +46,7 @@ export default function NeuralNet({ onOpen }: { onOpen: (i: number) => void }) {
 
   return (
     <>
-      <div className="ih-h1">Neural Net — one prompt across all 9 models</div>
+      <div className="ih-h1">Neural Net — one prompt across all 21 models</div>
       <div className="ih-sub">Each neuron is a model's answer (size = length). <b>Click</b> a neuron to read it; <b>select</b> it (click) to recolor every other neuron by how closely it matches — <span style={{ color: "#22c55e" }}>green = closest</span> · <span style={{ color: "#eab308" }}>yellow</span> · <span style={{ color: "#ef4444" }}>red = farthest</span> — with the best-match paths drawn.</div>
 
       <div className="ih-panel" style={{ position: "relative" }}>

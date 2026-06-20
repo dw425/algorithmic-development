@@ -13,7 +13,7 @@ export default function Overview({ onOpen, go }: { onOpen: (i: number) => void; 
       <div className="ih-sub">The same 1,005 prompts (stratified from a 100,000-prompt corpus) answered by three tiers of local model councils. How much they disagree, by task, and how good the answers are.</div>
       <div className="ih-cards">
         <div className="ih-card"><div className="v">{d.meta.n_prompts}</div><div className="l">prompts × 15 categories</div></div>
-        <div className="ih-card"><div className="v">{Number(d.meta.n_answers).toLocaleString()}</div><div className="l">answer nodes (9 models)</div></div>
+        <div className="ih-card"><div className="v">{Number(d.meta.n_answers).toLocaleString()}</div><div className="l">answer nodes (21 models)</div></div>
         <div className="ih-card"><div className="v" style={{ color: TIER_COLOR.large }}>{fmt(lg.divergence)}</div><div className="l">large-tier divergence (lowest)</div><div className="d ih-muted">vs small {fmt(sm.divergence)}</div></div>
         <div className="ih-card"><div className="v">{fmt(lg.quality, 2)}</div><div className="l">large-tier quality (highest)</div><div className="d ih-muted">vs small {fmt(sm.quality, 2)}</div></div>
       </div>

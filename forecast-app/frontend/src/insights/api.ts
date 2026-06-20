@@ -61,10 +61,17 @@ export const CHUNK_PALETTE = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#A855
 
 // ---- shared visual scales (consistent colors across all tabs) ----
 export const TIER_COLOR: Record<Tier, string> = { small: "#9ecae1", medium: "#4C72B0", large: "#22d3a8" };
+// 21 distinct models, 7/tier. small = light blues · medium = mid blue/violet · large = teals/greens.
 export const MODEL_COLOR: Record<string, string> = {
-  "llama3.2:3b": "#9ecae1", "qwen2.5-coder:1.5b": "#74c0fc", "gemma2:2b": "#a5d8ff",
-  "deepseek-llm:7b": "#4C72B0", "qwen2.5:14b": "#5b8def", "mistral:7b": "#748ffc",
-  "mistral-small:24b": "#22d3a8", "gemma2:27b": "#2ca08a",
+  // small (7)
+  "llama3.2:3b": "#9ecae1", "phi3:mini": "#74c0fc", "qwen2.5-coder:1.5b": "#a5d8ff",
+  "gemma2:2b": "#c0dbf0", "internlm2:1.8b": "#7fb3e6", "stablelm2:1.6b": "#b3d4f5", "granite3-dense:2b": "#8ec5f0",
+  // medium (7)
+  "gemma2:9b": "#4C72B0", "yi:9b": "#5b8def", "glm4:9b": "#748ffc", "llama3.1:8b": "#6a5acd",
+  "qwen2.5:7b": "#7c6df0", "deepseek-llm:7b": "#5566cc", "mistral:7b": "#8a7ff0",
+  // large (7)
+  "gemma2:27b": "#22d3a8", "mistral-small:24b": "#2ca08a", "codestral:22b": "#16a34a",
+  "internlm2:20b": "#3fbf8f", "deepseek-coder-v2:16b": "#15b88a", "qwen2.5:14b": "#2dd4bf", "phi4": "#0ea271",
 };
 // 0 (low/identical) -> 1 (high/divergent): cool -> hot
 export function heat(t: number): string {
